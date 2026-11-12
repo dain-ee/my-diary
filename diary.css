@@ -20,7 +20,7 @@
   --paper: #efe8f1; --grid: rgba(96, 80, 108, .13); --line: rgba(52, 44, 58, .34); --ink: #1c1a1f; --ink2: #5d5762; --ink3: #9a939f; --blue: #7f9fe6;
   --pw: 550px; --ph: 745px; --bw: 1100px; --u: calc(var(--pw) / 100); --tl: 3px; --tr: 9px;
   --f-ui: "Pretendard", -apple-system, "Apple SD Gothic Neo", sans-serif; --f-num: "Play", "Didot", serif; --f-hand: "H-yaong", "H-on", cursive; --hs: 1;
-  --f-did: var(--f-ui);   /* 「이번 주에 내가 한 것」 글씨: 손글씨로 바꾸려면 var(--f-hand) */
+  --f-did: var(--f-hand);   /* 「이번 주에 내가 한 것」 글씨: 손글씨로 바꾸려면 var(--f-hand) */
   --ease: cubic-bezier(.3, .7, .2, 1); --paper-tex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .25 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
