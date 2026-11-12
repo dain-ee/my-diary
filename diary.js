@@ -223,7 +223,8 @@
     const today = TODAY(); let i = 0;
     return `<div class="wk"><aside class="side">${calHtml(w)}</aside><div class="cells"><div class="cap">WEEK ${isoWeek(w.mon)} · ${wkRange(w.mon)}</div>${w.days.map((d) => {
       const D = dt(d.date), fut = d.date > today, has = entries().some((e) => e.date === d.date);
-      const L = d.lines.length ? d.lines.map((t) => `<span class="w" style="--i:${i++}">${safeLine(t)}</span>`).join('') : fut ? '' : `<span class="w dim" style="--i:${i++}">${d.date === today ? '오늘은 아직 빈 칸' : '쉬어 간 날'}</span>`;
+      let ls = d.lines; if (ls.length > 3) ls = ls.filter((t) => !/^<small>그리고/.test(t)).slice(0, 3);
+      const L = ls.length ? ls.map((t) => `<span class="w" style="--i:${i++}">${safeLine(t)}</span>`).join('') : fut ? '' : `<span class="w dim" style="--i:${i++}">${d.date === today ? '오늘은 아직 빈 칸' : '쉬어 간 날'}</span>`;
       return `<div class="cell ${d.date === today ? 'today' : ''}"><div class="cell-d"><b>${D.getDate()}</b><i>${WD[D.getDay()]}</i></div><div class="cell-t did">${L}${has ? `<button type="button" class="cell-go" data-jump="${idxOf(w.mon, 'wr')}">이날 쓴 글</button>` : ''}</div></div>`;
     }).join('')}</div></div>`;
   }
@@ -269,11 +270,10 @@
   const seed = (s) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
   function defStk(p) {
     const h = seed(pkey(p)), pick = (a, n) => a[(h >>> n) % a.length];
-    if (p.t === 'wl') { const o = PHONE ? 0.32 : 0; return [{ id: 'd0', k: pick(['poster', 'posterk', 'blob', 'word'], 0), x: 0.165, y: 0.55 + o, r: -3 }, { id: 'd1', k: pick(['ransom', 'ransomk', 'stamp', 'slow'], 3), x: 0.17, y: 0.84 + o, r: 3 }, { id: 'd2', k: pick(['f_book', 'f_matcha', 'f_window', 'f_sky2', 'f_book1', 'f_tulip'], 6), x: 0.165, y: 1.13 + o, r: -2 }]; }
-    if (p.t === 'wr') return [{ id: 'd0', k: pick(['f_peony', 'f_latte', 'f_cake', 'f_sea', 'f_croissant', 'f_sky'], 2), x: 0.8, y: 0.17, r: 4 }, { id: 'd1', k: pick(['beads2', 'tag2', 'slow', 'tag3'], 5), x: 0.8, y: 0.37, r: -3 }];
+    // 미리 붙어 나오는 것은 사진과 영문 인쇄 문구만, 적게. 우리가 지은 한글 쪽지는 붙이지 않아요 (쪽지는 서랍에서 정윤이 직접 써요)
+    if (p.t === 'wl') { const o = PHONE ? 0.34 : 0; return [{ id: 'd0', k: pick(['slow', 'word', 'stamp', 'tag2'], 0), x: 0.165, y: 0.62 + o, r: -3 }, { id: 'd2', k: pick(['f_book', 'f_matcha', 'f_window', 'f_sky2', 'f_book1', 'f_tulip'], 6), x: 0.165, y: 1.08 + o, r: -2 }]; }
+    if (p.t === 'wr') return [{ id: 'd0', k: pick(['f_peony', 'f_latte', 'f_cake', 'f_sea', 'f_croissant', 'f_sky'], 2), x: 0.8, y: 0.19, r: 4 }];
     if (p.t === 'fly') return [{ id: 'd0', k: 'f_peony', x: 0.76, y: 0.2, r: 8 }];
-    if (p.t === 'dall') return [{ id: 'd0', k: 'beads', x: 0.72, y: 1.18, r: -2 }];
-    if (p.t === 'wall') return [{ id: 'd0', k: 'brush', x: 0.74, y: 1.08, r: 3 }];
     return [];
   }
   const stkList = (p) => (DOC.stk[pkey(p)] ? DOC.stk[pkey(p)].list : defStk(p));
@@ -284,7 +284,9 @@
 
   const BODY = { fly: flyHtml, toc: tocHtml, dall: () => listHtml('day'), wall: () => listHtml('worry'), photos: photosHtml, about: aboutHtml };
   function pageBody(p) { return p.t === 'cover' ? coverHtml() : `<div class="in"><div class="sheet">${p.w ? (p.t === 'wl' ? wlHtml(p.w) : wrHtml(p.w)) : BODY[p.t]()}${stkList(p).map((s) => stkHtml(s)).join('')}</div></div><div class="pglab">${esc(plabel(p))}</div>`; }
-  function mk(i, side) { const p = P[i], el = document.createElement('div'); el.className = `page ${p.t === 'cover' ? 'cover' : p.t} ${side === 'L' ? 'sl' : 'sr'}`; el.dataset.pi = i; el.innerHTML = pageBody(p); fillPhotos(el); bindPage(el, i); return el; }
+  // 종이 뒷면이 아주 희미하게 비쳐요 (뒤집힌 채로)
+  function ghost(i) { const g = i % 2 ? i - 1 : i + 1, q = P[g]; if (!q || q.t === 'cover' || P[i].t === 'cover') return ''; const h = `<div class="gin"><div class="sheet">${q.w ? (q.t === 'wl' ? wlHtml(q.w) : wrHtml(q.w)) : BODY[q.t]()}${stkList(q).map((s) => stkHtml(s)).join('')}</div></div>`; return `<div class="ghost" aria-hidden="true" inert>${h.replace(/ (id|for|data-(?!ph\b)[a-z]+)="[^"]*"/g, '').replace(/ data-(edit|ok|addph|del|x|mine|note)(?=[ >])/g, '').replace(/<textarea[^>]*>/g, '<div class="hand" style="white-space:pre-wrap">').replace(/<\/textarea>/g, '</div>')}</div>`; }
+  function mk(i, side) { const p = P[i], el = document.createElement('div'); el.className = `page ${p.t === 'cover' ? 'cover' : p.t} ${side === 'L' ? 'sl' : 'sr'}`; el.dataset.pi = i; el.innerHTML = pageBody(p) + ghost(i); fillPhotos(el); bindPage(el, i); return el; }
   const blank = (side) => { const el = document.createElement('div'); el.className = `page blank ${side === 'L' ? 'sl' : 'sr'}`; return el; };
   function mount(keep) {
     const sc = keep ? $$('.slot > .page .in').map((x) => [x.parentElement.dataset.pi, x.scrollTop]) : [];
@@ -314,7 +316,8 @@
     const v = view(pos), shown = [v.L, v.R].filter((i) => i >= 0).map((i) => P[i]), on = new Set();
     for (const p of shown) { if (p.t === 'fly' || p.t === 'toc') on.add('toc'); if (p.t === 'dall') on.add('day'); if (p.t === 'wall') on.add('worry'); if (p.t === 'photos') on.add('photo'); if (p.t === 'about') on.add('set'); if (p.w) { on.add('m' + thu(p.w.mon).getMonth()); if (p.w.mon === curMon()) on.add('now'); } }
     $$('[data-tab]', tabs).forEach((b) => b.classList.toggle('on', on.has(b.dataset.tab)));
-    const pr = P.length > 1 ? pos / (P.length - 1) : 0; book.style.setProperty('--tl', (closed ? 0 : 2 + pr * 14).toFixed(1) + 'px'); book.style.setProperty('--tr', (2 + (1 - pr) * 14).toFixed(1) + 'px');
+    const pr = P.length > 1 ? pos / (P.length - 1) : 0; const tl = closed ? 0 : 2 + pr * 13, tr = 2 + (1 - pr) * 13, td = (closed || !TWO ? tr : Math.max(tl, tr)) * 0.5, stack = (t, dir) => { const a = [], n = 8; for (let k = 1; k <= n; k++) { const o = t * k / n, y = (td * k / n).toFixed(2); const c = k % 2 ? '#fcfafc' : '#c8bfcb'; a.push(`${(dir * o).toFixed(2)}px ${y}px 0 ${c}`, `0 ${y}px 0 ${c}`); } return a.join(', '); };
+    book.style.setProperty('--shl', stack(tl, -1)); book.style.setProperty('--shr', stack(tr, 1)); book.style.setProperty('--tr', tr.toFixed(1) + 'px');
     const a = shown.find((p) => p.w) || shown[0]; $('#here').textContent = closed || !a ? '' : a.w ? `${wkLabel(a.w.mon)}${a.w.mon === curMon() ? ' · 이번 주' : ''} · ${wkRange(a.w.mon)}` : shown.map(plabel).filter(Boolean).join(' · ');
     $('#b-prev').disabled = pos <= 0; $('#b-next').disabled = TWO ? sp(pos) >= sp(P.length - 1) : pos >= P.length - 1;
     const p = P[pos]; if (p && pos > 2) LS.set('jd:last', pkey(p));
@@ -438,7 +441,18 @@
     stkMut(pi, (L) => { const s = L.find((q) => q.id === id); if (!s) return; if (t === 'rl') s.r = (s.r || 0) - 10; if (t === 'rr') s.r = (s.r || 0) + 10; if (t === 'sm') s.s = Math.max(0.45, (s.s || 1) / 1.15); if (t === 'lg') s.s = Math.min(3, (s.s || 1) * 1.15); el.style.transition = 'transform .25s'; el.style.setProperty('--r', s.r + 'deg'); el.style.setProperty('--s', s.s || 1); });
   };
   let STKPAGE = -1;   // 붙일 쪽: 펼침에서는 마지막으로 만진 쪽, 없으면 오른쪽
-  book.addEventListener('pointerdown', (e) => { const pg = e.target.closest && e.target.closest('.slot > .page'); if (pg) STKPAGE = +pg.dataset.pi; if (SEL && !(e.target.closest && e.target.closest('.stk'))) desel(); }, true);
+  let justDesel = false;
+  book.addEventListener('pointerdown', (e) => { justDesel = false; const pg = e.target.closest && e.target.closest('.slot > .page'); if (pg) STKPAGE = +pg.dataset.pi; if (SEL && !(e.target.closest && e.target.closest('.stk'))) { desel(); justDesel = true; } }, true);
+  // 쪽 바깥 가장자리(빈 종이)를 누르면 한 장 넘어가요. 누른 쪽 귀퉁이가 살짝 들려요
+  book.addEventListener('click', (e) => {
+    if (busy || dragging || EDIT || SEL || justDesel || pos === 0) return;
+    const pg = e.target.closest('.slot > .page'); if (!pg || pg.classList.contains('cover')) return;
+    if (e.target.closest('.stk, button, textarea, input, a, label, .cell, .ent, .did-box, .fld, .set, .ym, .toc-l, .row, .pc, .mine-h, .cal, .fonts')) return;
+    const r = pg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, left = pg.classList.contains('sl');
+    const d = !left && x > 5 / 6 ? 1 : (left || !TWO) && x < 1 / 6 ? -1 : 0; if (!d || (d > 0 && $('#b-next').disabled)) return;
+    const c = document.createElement('div'); c.className = 'curl ' + (d > 0 ? 'r' : 'l'); pg.appendChild(c); busy = true;
+    setTimeout(() => { busy = false; c.remove(); step(d); }, 260);
+  });
   function addStk(k, extra) {
     const v = view(pos); let pi = [v.L, v.R].includes(STKPAGE) ? STKPAGE : v.R >= 0 ? v.R : v.L; if (P[pi].t === 'cover') return;
     const pg = $(`.slot > .page[data-pi="${pi}"]`), sc = $('.in', pg); if (!sc) return; const pw = pg.clientWidth, y = (sc.scrollTop + sc.clientHeight * 0.45) / pw, s = { id: 's' + uid(), k, x: +(0.5 + (Math.random() - 0.5) * 0.2).toFixed(3), y: +y.toFixed(4), r: Math.round((Math.random() - 0.5) * 12), s: 1, ...(extra || {}) };
@@ -453,7 +467,7 @@
   let TG = 'photo';
   function stkTray() {
     const items = ORDER.filter((k) => STK[k].g === TG);
-    openTray(`<div class="tray-h"><b>붙이기</b><button type="button" data-g="photo" class="${TG === 'photo' ? 'on' : ''}">사진</button><button type="button" data-g="print" class="${TG === 'print' ? 'on' : ''}">문구 종이</button><button type="button" data-x>닫기</button></div><div class="tray-g">${TG === 'photo' ? '<button type="button" class="mine" data-mine style="--i:0">내 사진 올려서<br>오려 붙이기</button>' : '<button type="button" class="mine" data-note style="--i:0">쪽지 쓰기<br>(내 글씨)</button>'}${items.map((k, i) => `<button type="button" data-k="${k}" style="--i:${i + 1};--tw:${STK[k].w}" aria-label="${esc(STK[k].n)}"><div>${STK[k].h}</div></button>`).join('')}</div>`, (el) => {
+    openTray(`<div class="tray-h"><b>붙이기</b><button type="button" data-g="photo" class="${TG === 'photo' ? 'on' : ''}">사진</button><button type="button" data-g="print" class="${TG === 'print' ? 'on' : ''}">문구 종이</button><button type="button" data-x>닫기</button></div><div class="tray-g">${TG === 'photo' ? '<button type="button" class="mine" data-mine style="--i:0">내 사진 올려서<br>오려 붙이기</button>' : '<button type="button" class="mine" data-note style="--i:0">빈 쪽지 붙이기<br>(내 글씨로 써요)</button>'}${items.map((k, i) => `<button type="button" data-k="${k}" style="--i:${i + 1};--tw:${STK[k].w}" aria-label="${esc(STK[k].n)}"><div>${STK[k].h}</div></button>`).join('')}</div>`, (el) => {
       $('[data-x]', el).onclick = closeTray; $$('[data-g]', el).forEach((b) => (b.onclick = () => { TG = b.dataset.g; stkTray(); }));
       const m = $('[data-mine]', el); if (m) m.onclick = () => pickPhoto((id, sh) => addStk('img', { ph: id, sh }));
       const nt = $('[data-note]', el); if (nt) nt.onclick = () => addStk('note', { t: '' });
