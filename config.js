@@ -1,0 +1,2 @@
+// 서버 주소와 공개용 키(말랑대학과 같은 것, 공개해도 되는 키). 일기는 주인 코드가 있어야만 읽고 쓸 수 있어요.
+window.DIARY_CFG = { url: "https://bvwmunmlepqgtzaavaah.supabase.co", key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2d211bm1sZXBxZ3R6YWF2YWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MDczNzAsImV4cCI6MjEwMDM4MzM3MH0.GsG8wABpkrxnEknV9fBq_jJ_C-bBf4vqCHlfRPBj6rA", vapid: "BJ6AXfB_bpk7VvwpVgdiIx8YxqV7D6WmXCiQdcpsWZXSrz8y1g4dhSF27iEXxoc91CoQckn9YYnoMKB_OZM_4AI", univ: "https://dain-ee.github.io/mallang-univ/", owner: "정윤" };

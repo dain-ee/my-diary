@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#e7ddd6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="My Diary">
+<title>My Diary</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="stylesheet" href="diary.css?v=202611130038">
+</head>
+<body class="one closed">
+<div id="app">
+  <div id="stage">
+    <div id="here"></div>
+    <div id="book">
+      <div class="thick l"></div><div class="thick r"></div>
+      <div class="slot L" id="slotL"></div><div class="slot R" id="slotR"></div>
+      <nav id="tabs" aria-label="인덱스"></nav>
+    </div>
+  </div>
+  <nav id="bar" class="hide">
+    <button type="button" id="b-prev" aria-label="앞 장"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" id="b-toc"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg><span>목차</span></button>
+    <button type="button" id="b-stk"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4 4 3 3-2 4 3"/></svg><span>붙이기</span></button>
+    <button type="button" id="b-write"><svg viewBox="0 0 24 24"><path d="M4 20l1-5L16 4l4 4L9 19z"/><path d="M14 6l4 4"/></svg><span>쓰기</span></button>
+    <button type="button" id="b-next" aria-label="다음 장"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  </nav>
+  <div id="tool" class="hide"></div>
+  <div id="tray" class="hide"></div>
+  <div id="crop" class="hide"></div>
+  <div id="toast"></div>
+</div>
+<input type="file" id="file" accept="image/*" hidden>
+<script src="config.js?v=202611130038"></script>
+<script src="stickers.js?v=202611130038"></script>
+<script src="diary.js?v=202611130038"></script>
+</body>
+</html>
