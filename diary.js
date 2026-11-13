@@ -221,7 +221,7 @@
   const entPh = (e) => (e.ph || []).map((x) => (typeof x === 'string' ? { id: x, sh: 'pol' } : x));
 
   const LOCK = '<svg viewBox="0 0 10 12"><path d="M2.5 5V3.5a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="5" width="8" height="6.5" rx="1.5" fill="currentColor"/></svg>';
-  const CLIP = (STK.ransom.h.match(/<svg class="bclip"[\s\S]*?<\/svg>/) || [''])[0];
+  const CLIP = "";
   setTimeout(() => document.body.classList.remove('cv-in'), 3200);   // 표지가 처음 나타날 때만 움직여요
   function coverHtml() {
     return `<div class="cv">
@@ -452,7 +452,7 @@
     const fwd = t > pos, dist = TWO ? Math.abs(sp(t) - sp(pos)) : Math.abs(t - pos), n = far ? Math.min(dist, 10) : 1, thin = pos !== 0 && t !== 0, dur = thin ? (n > 1 ? 460 : 540) : n > 1 ? 540 : 700, ST = thin ? (n > 5 ? 45 : 65) : n > 5 ? 55 : 80, leaves = [];
     const face = (leaf, cls, pg) => { const f = document.createElement('div'); f.className = 'face ' + cls; f.appendChild(pg); leaf.appendChild(f); };
     // 얇은 종이 한 장(표지가 아닌 속지): ft = 넘어가는 앞면, bk = 뒷면. zf/zb = 앞면 조각과 뒷면 조각의 쌓임 순서
-    const paper = (cls, i, zf, zb, ft, bk) => { const l = document.createElement('div'); l.className = 'leaf pp ' + cls; l.style.setProperty('--d', i * ST + 'ms'); l.style.setProperty('--dur', dur + 'ms'); l.innerHTML = `<div class="pp-m" style="z-index:${zf}"><div class="pp-k"><div class="pp-o"></div></div><i class="pp-s"></i></div><div class="pp-m" style="z-index:${zb}"><div class="pp-k"><div class="pp-b"><i class="pp-e"></i></div><i class="pp-g"></i></div></div>`; $('.pp-o', l).appendChild(ft); $('.pp-b', l).appendChild(bk); leaves.push(l); book.appendChild(l); };
+    const paper = (cls, i, zf, zb, ft, bk) => { const l = document.createElement('div'); l.className = 'leaf pp ' + cls; l.style.setProperty('--d', i * ST + 'ms'); l.style.setProperty('--dur', dur + 'ms'); l.innerHTML = `<div class="pp-m" style="z-index:${zf}"><div class="pp-k"><div class="pp-o"></div></div><i class="pp-s"></i></div><div class="pp-m" style="z-index:${zb}"><div class="pp-k"><div class="pp-b"><i class="pp-e"></i></div><i class="pp-g"></i></div></div>`; $('.pp-o', l).appendChild(ft); $('.pp-b', l).appendChild(bk); $('.pp-b', l).insertAdjacentHTML('beforeend', '<i class="pp-w"></i>'); leaves.push(l); book.appendChild(l); };
     const leaf = (cls, i, za, zb) => { const l = document.createElement('div'); l.className = 'leaf ' + cls; l.style.setProperty('--d', i * ST + 'ms'); l.style.setProperty('--dur', dur + 'ms'); l.style.setProperty('--za', za); l.style.setProperty('--zb', zb); leaves.push(l); return l; };
     const oldL = slotL.firstElementChild, oldR = slotR.lastElementChild; let newL = null, newR = null, fin;
     if (TWO && fwd) {
@@ -614,10 +614,10 @@
   function openTray(html, bind) { desel(); tray.innerHTML = `<div class="tray-in">${html}</div>`; tray.classList.remove('hide'); bind && bind(tray); }
   function closeTray() { tray.classList.add('hide'); }
   tray.onclick = (e) => { if (e.target === tray) closeTray(); };
-  let TG = 'photo';
+  let TG = 'doodle';
   function stkTray() {
     const items = ORDER.filter((k) => STK[k].g === TG);
-    openTray(`<div class="tray-h"><b>붙이기</b><button type="button" data-g="photo" class="${TG === 'photo' ? 'on' : ''}">사진</button><button type="button" data-g="print" class="${TG === 'print' ? 'on' : ''}">문구 종이</button><button type="button" data-g="doodle" class="${TG === 'doodle' ? 'on' : ''}">낙서</button><button type="button" data-g="pastel" class="${TG === 'pastel' ? 'on' : ''}">파스텔</button><button type="button" data-x>닫기</button></div><div class="tray-g g-${TG}">${TG === 'photo' ? '<button type="button" class="mine" data-mine style="--i:0">내 사진 올려서<br>오려 붙이기</button>' : TG === 'print' ? '<button type="button" class="mine" data-note style="--i:0">빈 쪽지 붙이기<br>(내 글씨로 써요)</button>' : ''}${items.map((k, i) => `<button type="button" data-k="${k}" style="--i:${i + 1};--tw:${STK[k].w}" aria-label="${esc(STK[k].n)}"><div>${STK[k].h}</div></button>`).join('')}</div>`, (el) => {
+    openTray(`<div class="tray-h"><b>붙이기</b>${[['doodle', '낙서'], ['animal', '동물'], ['item', '소품'], ['xs', '십자수'], ['label', '라벨'], ['pastel', '파스텔']].map(([g, n]) => `<button type="button" data-g="${g}" class="${TG === g ? 'on' : ''}">${n}</button>`).join('')}<button type="button" data-x>닫기</button></div><div class="tray-g g-${TG}">${TG === 'doodle' ? '<button type="button" class="mine" data-mine style="--i:0">내 사진 올려서<br>오려 붙이기</button>' : TG === 'label' ? '<button type="button" class="mine" data-note style="--i:0">빈 쪽지 붙이기<br>(내 글씨로 써요)</button>' : ''}${items.map((k, i) => `<button type="button" data-k="${k}" style="--i:${i + 1};--tw:${STK[k].w}" aria-label="${esc(STK[k].n)}"><div>${STK[k].h}</div></button>`).join('')}</div>`, (el) => {
       $('[data-x]', el).onclick = closeTray; $$('[data-g]', el).forEach((b) => (b.onclick = () => { TG = b.dataset.g; stkTray(); }));
       const m = $('[data-mine]', el); if (m) m.onclick = () => pickPhoto((id, sh) => addStk('img', { ph: id, sh }));
       const nt = $('[data-note]', el); if (nt) nt.onclick = () => addStk('note', { t: '' });

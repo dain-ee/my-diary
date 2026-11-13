@@ -6,28 +6,24 @@
 - Pretendard: OFL
 - Galmuri11 · Galmuri9 (quiple/galmuri), DotGothic16, Quicksand (Google Fonts), 나눔스퀘어라운드 (NAVER): 모두 SIL OFL 1.1, KS X 1001 한글 2350자와 영문만 남긴 부분집합
 
-# 사진 출처
+# 그림 출처
 
-모두 Unsplash 무료 사진(Unsplash License: 상업·비상업 무료 사용, 수정 가능, 허락·표기 불필요). 2026-11-13 받음. 원본은 `source/photos/dl/`, 가공본은 `assets/ph/`.
+배포본에는 Unsplash 사진이 더 없어요. 예전 사진 스티커(가공본)는 `source/photos/old_ph/`, 원본은 `source/photos/dl/` 에만 남겨 두었어요.
 
-| 파일 | 사진 페이지 | 작가(@) |
+## 스티커 그림 (assets/stk/)
+
+모두 GPT 이미지 생성 (2026-11-13). 원본 시트는 `source/gen/`, 녹색 배경을 지우고 하나씩 잘라 냄(`source/gen/cut.py`). 그림 안에 글자는 없어요.
+
+| 파일 | 원본 시트 | 내용 |
 | -- | -- | -- |
-| book0.webp | https://unsplash.com/photos/white-book-page-on-white-textile-lSoOqwAJRZk | kritikahasija27 |
-| book1.webp | https://unsplash.com/photos/opened-book-on-brown-textile-ahoVacMUrj8 | anniespratt |
-| cake0.webp | https://unsplash.com/photos/white-and-red-strawberry-cake-fENvSZUzbzU | takuya_n |
-| latte1.webp | https://unsplash.com/photos/cafe-latte-Nw8wbiDE3gU | storybyphil |
-| latte2.webp | https://unsplash.com/photos/white-ceramic-cup-with-saucer-on-brown-wooden-table-LI8inyHnm_A | robbiedown |
-| matcha0.webp | https://unsplash.com/photos/iced-matcha-latte-on-wooden-table-N1rmKN_EOaA | olenkasergienko |
-| sea1.webp | https://unsplash.com/photos/lighthouse-surrounded-by-wide-body-of-water-V97GBzRkqEg | mparente |
-| sky0.webp | https://unsplash.com/photos/pink-yellow-and-purple-cloudy-sky-iW1WzbuWMcA | fernandostrabuli456 |
-| sky2.webp | https://unsplash.com/photos/a-pink-and-blue-sky-9hjz_h1GWRo | hansphoto |
-| tulip2.webp | https://unsplash.com/photos/five-pink-tulips-stand-against-a-pale-blue-background-WrmGyICcM6A | hypocriteeeee |
-| window0.webp | https://unsplash.com/photos/white-window-curtains-VUu9rAmb9R0 | mila_albrecht |
-| desk2.webp | https://unsplash.com/photos/an-open-notebook-with-a-pen-on-a-wooden-desk-6e7F96dBlAA | pendulumphotographs |
-| books0.webp | https://unsplash.com/photos/pile-of-open-paperback-books-LUGuCtvlk1Q | gulfergin_01 |
-| cake1.webp | https://unsplash.com/photos/strawberry-cake-on-white-surface-cZFU60dKB6U | amir_v_ali |
-| peony0.webp | https://unsplash.com/photos/photo-of-pink-petaled-flowers-9A_peGrSbZc | olia |
-| croissant1.webp | https://unsplash.com/photos/a-white-plate-topped-with-croissants-next-to-a-cup-of-coffee-lOAibPIy8WA | 12tones |
+| s2_a_0~8, s2_b_0~8 | s2_a.png, s2_b.png | 낙서 동물 (낙서 문구 스티커에도 씀) |
+| s2_c_0~8, s2_d_0~8 | s2_c.png, s2_d.png | 먹을 것 · 책상 소품 |
+| p_folder_0~9 | p_folder.png | 파스텔 폴더 · 편지 · 카세트 등 |
+| p_xs_0~8 | p_xs.png | 십자수 리본 · 열쇠 · 하트 등 |
+| p_tape_0~7, p_frames_0~5, p_win_0~3 | p_tape.png, p_frames.png, p_win.png | 테이프 · 라벨 · 액자 · 창 모양 카드 |
+
+표지 후보(아직 적용 안 함): `source/gen/pc_a.png`, `pc_b.png`, `pc_c.png`.
+
 
 ## 표지
 
@@ -58,4 +54,4 @@
 | assets/fly/girl.webp | source/gen/girl_a.png | 흰 여백을 잘라 줄임. 카드 사진 칸의 기본 그림 |
 
 쓰지 않은 그림: `source/gen/w2_idcard_sky.png`, `source/gen/girl_b.png`, `source/gen/girl_c.png`.
-스티커 묶음 「낙서」「파스텔」의 그림은 모두 코드(SVG·CSS)로 직접 그렸어요.
+스티커 묶음 「파스텔」과 낙서 문구의 바탕·글자는 코드(SVG·CSS)로 만들었어요.

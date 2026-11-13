@@ -107,6 +107,14 @@ body.one .leaf.f { animation-name: leafF1, leafZ; } body.one .leaf.r { animation
 .pp-e { right: 100%; width: 5%; background: linear-gradient(to left, rgba(96, 84, 78, .15), rgba(96, 84, 78, .04) 45%, transparent); }
 .pb .pp-e { right: auto; left: 100%; background: linear-gradient(to right, rgba(96, 84, 78, .15), rgba(96, 84, 78, .04) 45%, transparent); }
 .leaf.pp.prv { --pe: cubic-bezier(.8, 0, .62, .96); } .prv .pp-m, .prv .pp-o, .prv .pp-b, .prv .pp-g, .prv .pp-s, .prv .pp-e { animation-direction: reverse; }
+/* 넘어가는 동안 종이 뒷면은 빈 모눈 종이로 보이고(다음 쪽 글씨가 비치지 않게), 내려앉을 때 글이 드러나요. 접힌 자리에는 둥글게 말린 듯한 빛과 그늘 */
+.pp-w { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; background-color: var(--paper);
+  background-image: linear-gradient(to left, rgba(255, 255, 255, .9) 0, rgba(255, 255, 255, .9) .6%, rgba(96, 84, 78, .2) 2.2%, rgba(96, 84, 78, .1) 7%, rgba(255, 255, 255, .75) 17%, rgba(96, 84, 78, .05) 34%, rgba(96, 84, 78, 0) 60%), linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 100% 100%, 20px 20px, 20px 20px; background-position: 0 0, 9px 9px, 9px 9px;
+  animation: ppW var(--dur) linear var(--d) both; }
+.pb .pp-w { background-image: linear-gradient(to right, rgba(255, 255, 255, .9) 0, rgba(255, 255, 255, .9) .6%, rgba(96, 84, 78, .2) 2.2%, rgba(96, 84, 78, .1) 7%, rgba(255, 255, 255, .75) 17%, rgba(96, 84, 78, .05) 34%, rgba(96, 84, 78, 0) 60%), linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); }
+.prv .pp-w { animation-direction: reverse; }
+@keyframes ppW { 0%, 72% { opacity: 1; } 100% { opacity: 0; } }
+.pp-s { width: 14% !important; } .pp-e { width: 8% !important; }
 @keyframes ppM { from { transform: translateX(0); } to { transform: translateX(calc(var(--s) * var(--pw) * -1)); } }
 @keyframes ppO { from { transform: translateX(0); } to { transform: translateX(calc(var(--s) * var(--pw))); } }
 @keyframes ppB { from { transform: translateX(calc(var(--s) * var(--pw))); } to { transform: translateX(0); } }
@@ -615,6 +623,12 @@ button.ym-w { color: var(--gr); } button.ym-w:active { background: var(--sk2); }
 @media (max-width: 430px) { .tray-h { gap: 4px; } .tray-h button { padding: 9px 9px; font-size: 13px; } }
 @media (prefers-reduced-motion: reduce) { .tray-h button.on, .tray-g button.pick { animation: none; } }
 /* ▲ W4 */
+.gs { display: block; } .gs img { display: block; width: 100%; height: auto; -webkit-user-drag: none; filter: drop-shadow(0 1px 1px rgba(107, 107, 107, .18)); }
+img.ds-a { height: calc(var(--q) * 7.4); object-fit: contain; } .ds.memo img.ds-a { height: calc(var(--q) * 6.6); } .ds.seal img.ds-a, .ds-wb img.ds-a { height: calc(var(--q) * 6.4); }
+.pr-note { background: var(--pk); box-shadow: none; outline: 0; } .pr-note::before { background: rgba(214, 238, 255, .9); }
+.tray-g .mine { background: var(--sk); color: var(--gr); font: 400 12px/1.5 var(--f-px); border-radius: 0; }
+.tray-g.g-animal button > div, .tray-g.g-item button > div { width: 74% !important; } .tray-g.g-xs button > div { width: 52% !important; } .tray-g.g-label button > div { width: 82% !important; }
+.tray-g.g-label button:not(.mine), .tray-g.g-xs button { background: #fff0fa; } .tray-g button { border-radius: 0; }
 
 /* 아래 막대 */
 #bar { position: relative; z-index: 40; width: 100%; max-width: 560px; height: 58px; flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 10px calc(env(safe-area-inset-bottom) * .6); margin-bottom: 4px; transition: transform .5s var(--ease), opacity .4s; }
@@ -672,3 +686,23 @@ body.closed #here { opacity: 0; }
 #crop small { color: rgba(255, 255, 255, .7); font: 400 13px/1.4 var(--f-ui); }
 
 @media (prefers-reduced-motion: reduce) { .leaf { animation-duration: .01s !important; } .w, .sg { animation: none; } }
+
+/* 휴대폰 폭: 글자가 겹치거나 줄이 꺾이던 곳 */
+@media (max-width: 499px) {
+  .page.cover { background-size: cover; background-position: 0 50%; }
+  .toc-h { flex-direction: column; align-items: flex-start; gap: 2px; } .toc-h .lab { white-space: normal; }
+  .ym-w { font-size: 9px; letter-spacing: -.06em; }
+  .toc-l button span { white-space: nowrap; font-size: 11px; }
+  .cells-h { flex-wrap: nowrap; } .cells-h .cap { white-space: nowrap; } .cells-h .lab { display: none; }
+}
+
+/* 사진 자르기 화면도 파스텔 도트 결로 */
+#crop { background: rgba(255, 240, 250, .97); }
+#crop h3 { color: var(--gr); font: 400 15px/1.3 var(--f-px); }
+#crop small { color: var(--gr2); font: 400 12px/1.4 var(--f-px); }
+#crop input[type=range] { accent-color: var(--pk2); }
+.cr-stage { background: var(--wh); box-shadow: 0 0 0 2px var(--wh), 0 0 0 3px var(--pk2); }
+.cr-row button { border-radius: 0; background: var(--wh); color: var(--gr); font: 400 13px/1 var(--f-px); }
+.cr-row button.on { background: var(--sk); color: var(--gr); }
+.cr-row button.go { background: var(--pk2); color: var(--gr); font-weight: 400; }
+@media (max-width: 499px) { .toc-l small { white-space: nowrap; } }
