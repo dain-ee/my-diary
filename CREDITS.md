@@ -27,3 +27,12 @@
 | cake1.webp | https://unsplash.com/photos/strawberry-cake-on-white-surface-cZFU60dKB6U | amir_v_ali |
 | peony0.webp | https://unsplash.com/photos/photo-of-pink-petaled-flowers-9A_peGrSbZc | olia |
 | croissant1.webp | https://unsplash.com/photos/a-white-plate-topped-with-croissants-next-to-a-cup-of-coffee-lOAibPIy8WA | 12tones |
+
+## 표지 (가죽 · 바늘땀 · 레이스)
+
+모두 Unsplash 무료 사진(Unsplash License). 2026-11-13 받음. 원본은 `source/cover/dl/`, 가공 스크립트는 `source/cover/`, 가공본은 `assets/cover/`.
+
+| 파일 | 사진 페이지 | 작가(@) | 가공 |
+| -- | -- | -- | -- |
+| leather.webp, stitch_h.webp, stitch_v.webp | https://unsplash.com/photos/brown-leather-with-stitching-creating-a-textural-look-5_GUH12XnNc | Olga Kovalski (kovalskihelga) | 갈색 가죽 사진의 결과 실 음영은 그대로 두고 색만 연베이비핑크로 바꿈. 바늘땀은 같은 사진의 솔기에서 구멍부터 구멍까지 잘라 이음 |
+| lace.webp | https://unsplash.com/photos/a-close-up-of-a-white-lace-on-a-black-background-hD2Fs7Aa504 | Divazus Fabric Store (divazus) | 검은 배경의 밝기를 투명도로 바꿔 물결 가장자리 띠만 잘라 씀. 사진 틀에서 잘린 술 끝은 짧게 다듬음 |

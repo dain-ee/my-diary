@@ -218,12 +218,10 @@
 
   const LOCK = '<svg viewBox="0 0 10 12"><path d="M2.5 5V3.5a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="5" width="8" height="6.5" rx="1.5" fill="currentColor"/></svg>';
   const CLIP = (STK.ransom.h.match(/<svg class="bclip"[\s\S]*?<\/svg>/) || [''])[0];
+  setTimeout(() => document.body.classList.remove('cv-in'), 3200);   // 표지가 처음 나타날 때만 움직여요
   function coverHtml() {
-    return `<div class="cv"><div class="cv-stitch"></div><div class="cv-lace"></div>
-      <div class="cv-card"><div class="sc"></div><div class="dots"></div><div class="cv-clip">${CLIP}</div>
-        <div class="cv-ttl">Diary</div><div class="cv-sub">my little archive · ${new Date().getFullYear()}</div>
-        <div class="cv-note"><i>slow down</i><b>ONE PAGE<br>AT A<br>TIME</b></div></div>
-      <div class="cv-mono">J</div>
+    return `<div class="cv"><div class="cv-lace"></div><i class="cv-st t"></i><i class="cv-st r"></i><i class="cv-st b"></i><i class="cv-st l"></i>
+      <div class="cv-ttl">Diary</div>
       ${!AUTH ? `<form class="cv-code" id="code-f"><p>주인만 열 수 있어요. 내 코드를 적어 주세요</p><input id="code-in" inputmode="text" autocomplete="off" autocapitalize="off" maxlength="24" aria-label="내 코드"><button type="submit">열기</button><p class="err" id="code-err"></p></form>` : '<div class="cv-open">TAP TO OPEN</div>'}</div>`;
   }
   function flyHtml() {
@@ -259,7 +257,7 @@
     return `<div class="side-h"><span class="num">${m + 1}</span></div><div class="cap" style="margin-top:calc(var(--u)*1.6)">${MON[m]}<br>${y}</div><div class="cal">${h}</div>`;
   }
   const hm = (m) => `${Math.floor(m / 60)}:${pad(Math.round(m) % 60)}`;
-  const dotLi = (i, key, name, m) => `<li class="w" style="--i:${i};--c:${colorOf(key)}"><i class="dot"></i><span class="nm did">${esc(name)}</span><small class="did">${fmtMin(m)}</small></li>`;
+  const dotLi = (i, key, name, m, short) => `<li class="w" style="--i:${i};--c:${colorOf(key)}"><i class="dot"></i><span class="nm did">${esc(name)}</span><small class="did">${short ? hm(m) : fmtMin(m)}</small></li>`;   // short: 좁은 칸에서는 4:12 처럼 (요일 칸과 같은 표기)
   function cellLines(r) {
     const L = [], S = [...r.it].sort((a, b) => b[2] - a[2]); S.slice(0, 2).forEach((x) => L.push(`${esc(x[0])} <small>${fmtMin(x[2])}</small>`));
     if (S.length > 2) L.push(`<small>그리고 ${S.length - 2}가지 더</small>`); else { const tail = []; if (r.solved) tail.push(`문제 ${r.solved}개 맞힘`); if (r.dn) tail.push(`끝낸 것 ${r.dn}개`); if (tail.length) L.push(tail.join(' · ')); }
@@ -269,7 +267,7 @@
   function wsumHtml(w) {
     const s = wsum(w); let i = 8; const row = (a, b) => `<div class="ws-r w" style="--i:${i++}"><span class="lab">${a}</span><b class="did">${b}</b></div>`;
     return `<div class="wsum"><span class="h-ul w" style="--i:7">이 주에 한 것</span>${row('공부한 시간', s.min ? fmtMin(s.min) : '아직 없음')}${row('책상에 앉은 날', `${s.on}일`)}${row('끝낸 것', `${s.dn}개`)}${s.solved ? row('맞힌 문제', `${s.solved}개`) : ''}${s.won ? row('모은 용돈', `${s.won.toLocaleString('ko-KR')}원`) : ''}
-      ${s.top.length ? `<span class="lab ws-t w" style="--i:${i++}">오래 붙잡은 것</span><ul class="dl sm">${s.top.map(([t, m]) => dotLi(i++, t, t === '앱' ? '앱 문제 풀이' : t, m)).join('')}</ul>` : ''}</div>`;
+      ${s.top.length ? `<span class="lab ws-t w" style="--i:${i++}">오래 붙잡은 것</span><ul class="dl sm">${s.top.map(([t, m]) => dotLi(i++, t, t === '앱' ? '앱 문제 풀이' : t, m, true)).join('')}</ul>` : ''}</div>`;
   }
   // 한 주 보기 (왼쪽 쪽): 달력 + 이 주 합계 + 요일 칸. 칸을 누르면 그날 페이지로 가요
   function wlHtml(w) {
