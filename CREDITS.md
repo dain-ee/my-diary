@@ -34,5 +34,6 @@
 
 | 파일 | 사진 페이지 | 작가(@) | 가공 |
 | -- | -- | -- | -- |
-| leather.webp, stitch_h.webp, stitch_v.webp | https://unsplash.com/photos/brown-leather-with-stitching-creating-a-textural-look-5_GUH12XnNc | Olga Kovalski (kovalskihelga) | 갈색 가죽 사진의 결과 실 음영은 그대로 두고 색만 연베이비핑크로 바꿈. 바늘땀은 같은 사진의 솔기에서 구멍부터 구멍까지 잘라 이음 |
+| leather.webp | https://unsplash.com/photos/a-light-beige-textured-background-ZVNnceSdN9s | Compagnons (sigmund) | 밝은 베이지의 결 고운 매끈한 가죽 사진을 줄여 쓰고 색만 연베이비핑크로 옮김 |
+| stitch_h.webp, stitch_v.webp | https://unsplash.com/photos/brown-leather-with-stitching-creating-a-textural-look-5_GUH12XnNc | Olga Kovalski (kovalskihelga) | 가죽 솔기에서 실과 바늘구멍만 구멍부터 구멍까지 잘라 이음. 실은 표지보다 살짝 밝은 분홍으로 |
 | lace.webp | https://unsplash.com/photos/a-close-up-of-a-white-lace-on-a-black-background-hD2Fs7Aa504 | Divazus Fabric Store (divazus) | 검은 배경의 밝기를 투명도로 바꿔 물결 가장자리 띠만 잘라 씀. 사진 틀에서 잘린 술 끝은 짧게 다듬음 |

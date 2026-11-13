@@ -17,7 +17,7 @@
 @font-face { font-family: "Pretendard"; font-weight: 700; src: url("fonts/Pretendard-Bold.woff2") format("woff2"); font-display: swap; }
 
 :root {
-  --paper: #fbf8f3; --grid: #dad6cf; --line: rgba(70, 60, 48, .3); --ink: #1c1a1f; --ink2: #57514a; --ink3: #8d867c; --blue: #7f9fe6;
+  --paper: #fdfcfa; --grid: #e9e6e1; --line: rgba(70, 60, 48, .3); --ink: #1c1a1f; --ink2: #57514a; --ink3: #8d867c; --blue: #7f9fe6;
   --pw: 550px; --ph: 745px; --bw: 1100px; --u: calc(var(--pw) / 100); --tl: 3px; --tr: 9px;
   --f-ui: "Pretendard", -apple-system, "Apple SD Gothic Neo", sans-serif; --f-num: "Play", "Didot", serif; --f-hand: "H-yaong", "H-on", cursive; --hs: 1;
   /* 손글씨 크기는 이 둘뿐이에요: 본문(목록·칸·일기·고민)과 큰 숫자(합계). 칸마다 따로 정하지 않아요 */
@@ -39,7 +39,7 @@ body.one .slot.L { display: none; }
 
 /* 종이 */
 .page { position: absolute; inset: 0; overflow: hidden; color: var(--ink); background-color: var(--paper);
-  /* 크림색 모눈종이: 바탕 #FBF8F3, 선 #DAD6CF 1px, 칸 20px. 종이결 무늬와 뒷장 비침은 글씨를 가려서 뺐어요 */
+  /* 모눈종이: 바탕 #FDFCFA(덜 누렇게), 선 #E9E6E1(연하게) 1px, 칸 20px. 종이결 무늬와 뒷장 비침은 글씨를 가려서 뺐어요 */
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 20px 20px; background-position: 9px 9px; border-radius: calc(var(--u) * 3.2); }
 body.two .page.sl { border-radius: calc(var(--u) * 3.6) 0 0 calc(var(--u) * 3.6); } body.two .page.sr { border-radius: 0 calc(var(--u) * 3.6) calc(var(--u) * 3.6) 0; }
 .page::before { content: ""; position: absolute; top: 0; bottom: 0; width: 15%; pointer-events: none; z-index: 12; }
