@@ -113,7 +113,7 @@ body.one .leaf.f { animation-name: leafF1, leafZ; } body.one .leaf.r { animation
   animation: ppW var(--dur) linear var(--d) both; }
 .pb .pp-w { background-image: linear-gradient(to right, rgba(255, 255, 255, .9) 0, rgba(255, 255, 255, .9) .6%, rgba(96, 84, 78, .2) 2.2%, rgba(96, 84, 78, .1) 7%, rgba(255, 255, 255, .75) 17%, rgba(96, 84, 78, .05) 34%, rgba(96, 84, 78, 0) 60%), linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); }
 .prv .pp-w { animation-direction: reverse; }
-@keyframes ppW { 0%, 72% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes ppW { 0%, 45% { opacity: 1; } 100% { opacity: 0; } }
 .pp-s { width: 14% !important; } .pp-e { width: 8% !important; }
 @keyframes ppM { from { transform: translateX(0); } to { transform: translateX(calc(var(--s) * var(--pw) * -1)); } }
 @keyframes ppO { from { transform: translateX(0); } to { transform: translateX(calc(var(--s) * var(--pw))); } }
@@ -146,11 +146,14 @@ body.closed #tabs { opacity: 0; pointer-events: none; }
 @media (max-width: 499px) { #tabs { --tabx: 5px; } #tabs button.on { width: calc(100% + 4px); } #tabs button { border-radius: 0 7px 7px 0; } }
 
 /* 표지 (분홍은 표지에만). 가죽·바늘땀·레이스 모두 사진이에요 (assets/cover, 출처는 CREDITS.md) */
-.page.cover { border-radius: calc(var(--u) * 2.4) calc(var(--u) * 4) calc(var(--u) * 4) calc(var(--u) * 2.4) !important; background: #f6c3d6 url("assets/cover/cover.webp") center / 100% 100% no-repeat; }
-.page.cover::before { left: 0; right: auto; width: 5% !important; z-index: 12; background: linear-gradient(90deg, rgba(120, 60, 85, .16), rgba(120, 60, 85, 0) 55%, rgba(255, 255, 255, .14) 80%, rgba(255, 255, 255, 0)) !important; }
-.page.cover::after { background: linear-gradient(118deg, rgba(255, 255, 255, .12) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, .06) 50%, rgba(255, 255, 255, 0) 64%, rgba(120, 60, 85, .06) 100%); box-shadow: inset 0 0 0 .5px rgba(170, 110, 135, .35); }
+.page.cover { border-radius: calc(var(--u) * 2.4) calc(var(--u) * 4) calc(var(--u) * 4) calc(var(--u) * 2.4) !important; background: #ffc6de url("assets/cover/cover.webp") center / cover no-repeat; }
+.page.cover::before { left: 0; right: auto; width: 3% !important; z-index: 12; background: linear-gradient(90deg, rgba(107, 107, 107, .1), rgba(107, 107, 107, 0)) !important; }
+.page.cover::after { background: none; box-shadow: inset 0 0 0 .5px rgba(107, 107, 107, .18); }
 .cv { position: absolute; inset: 0; cursor: pointer; }
-.cv-open { position: absolute; left: 16%; right: 0; bottom: calc(var(--u) * 12); text-align: center; font: 400 calc(var(--u) * 2.5) / 1 var(--f-dot); letter-spacing: .28em; padding-left: .28em; color: #fff; text-shadow: 0 1px 1.5px rgba(150, 80, 110, .55); animation: breathe 2.6s ease-in-out infinite; }
+.cv-ttl { position: absolute; left: 6%; right: 6%; top: 51.5%; text-align: center; color: var(--gr); font: 400 calc(var(--u) * 7) / 1 var(--f-dot); letter-spacing: .12em; padding-left: .12em; }
+.cv-ttl small { display: block; margin-top: .7em; font: 400 calc(var(--u) * 2.4) / 1 var(--f-px); letter-spacing: .3em; padding-left: .3em; }
+.cv-open { position: absolute; left: 0; right: 0; bottom: calc(var(--u) * 9); text-align: center; font: 400 calc(var(--u) * 2) / 1 var(--f-dot); letter-spacing: .28em; padding-left: .28em; color: var(--gr); animation: breathe 2.6s ease-in-out infinite; }
+body.closed #app { background: #f1f1f1; }   /* 표지에 도트 레이스가 있으니 표지 화면에서는 아래 띠를 빼요 */
 body.cv-in .page.cover .cv { animation: cvIn 1.1s var(--ease) both; }
 @keyframes cvIn { from { opacity: .0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { body.cv-in .page.cover .cv { animation: none; } }
@@ -180,8 +183,6 @@ body.fontswap .hand, body.fontswap textarea, body.fontswap .hin { opacity: 0; }
 .hin:focus { border-color: var(--ink); } .hin::placeholder { color: var(--ink3); font: 400 calc(var(--u) * 2.3) / 2 var(--f-ui); }
 .fly-go { margin-top: calc(var(--u) * 4); display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1.6); }
 /* ▼ W2 첫 장 ID 카드 · 표지 안쪽 면 · 달 찾기 · 달 간지 · 책갈피 (그림: assets/fly) */
-.page.fly { background: var(--wh) url("assets/fly/pattern.webp") center / cover no-repeat; }
-.page.ins { background: url("assets/fly/pattern.webp") center / cover no-repeat, var(--pk); background-blend-mode: multiply; }
 .page.fly .sheet, .page.ins .sheet { padding: 0; } .page.fly .in { overflow: hidden; } .page.fly .pglab, .page.ins .pglab { display: none; }
 .fly { position: absolute; inset: 0; }
 .idc { --cl: calc(var(--pw) - var(--u) * 8); --k: calc(var(--cl) / 100); --lc: #f08fc0; --ll: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 6' preserveAspectRatio='none'%3E%3Cpath d='M1 3.4C16 2.3 31 4.3 49 3.1 66 2 82 4.2 99 2.9' fill='none' stroke='%23f7a9d2' stroke-width='1.5' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
@@ -689,7 +690,6 @@ body.closed #here { opacity: 0; }
 
 /* 휴대폰 폭: 글자가 겹치거나 줄이 꺾이던 곳 */
 @media (max-width: 499px) {
-  .page.cover { background-size: cover; background-position: 0 50%; }
   .toc-h { flex-direction: column; align-items: flex-start; gap: 2px; } .toc-h .lab { white-space: normal; }
   .ym-w { font-size: 9px; letter-spacing: -.06em; }
   .toc-l button span { white-space: nowrap; font-size: 11px; }
@@ -706,3 +706,51 @@ body.closed #here { opacity: 0; }
 .cr-row button.on { background: var(--sk); color: var(--gr); }
 .cr-row button.go { background: var(--pk2); color: var(--gr); font-weight: 400; }
 @media (max-width: 499px) { .toc-l small { white-space: nowrap; } }
+
+/* 낙서 스티커 글씨는 전부 픽셀 글꼴 (표지 제목과 같은 결) */
+.ds { font-family: var(--f-px); font-size: calc(var(--q) * 2.15); line-height: 1.25; letter-spacing: -.02em; }
+.ds.seal { font-size: calc(var(--q) * 1.8); line-height: 1.2; }
+
+/* 움직임 줄이기: 쪽 넘김 한 번만 남기고, 쪽 안 요소들이 떠오르거나 깜빡이며 다시 나타나는 것은 모두 빼요 */
+.w, .ent, .ent-ph .pc, .sg, .row, .ask, .idc, .fonts .on .rb::after, .tray-g button:not(.pick), .tray-w button, .tray-h button.on, .cv-open, .cv-code, body.cv-in .page.cover .cv, .mi *, .mo *, .mo2 * { animation: none !important; }
+#tray { transition: transform .18s ease-out, opacity .18s ease-out; }
+
+/* 첫 장: 다른 속지와 같은 종이 + 먹회색 도트 ID 카드 */
+.page.fly { background: var(--paper); }
+.page.ins { background: #fbf3f8 radial-gradient(circle, rgba(107, 107, 107, .13) 1px, transparent 1.4px) 0 0 / 14px 14px; background-blend-mode: normal; }
+.idc { --cl: calc(var(--pw) - var(--u) * 7); --ink: #555; height: calc(var(--cl) / 1.644); margin: calc(var(--cl) / -3.288) 0 0 calc(var(--cl) / -2); top: 46%; filter: drop-shadow(0 calc(var(--u) * .25) calc(var(--u) * .5) rgba(107, 107, 107, .22)); }
+.idc-pi { left: 8.1%; top: 16.4%; width: 25.8%; height: 54%; background: #fff; z-index: 1; }
+.idc-pi .idc-girl { object-fit: cover; padding: 0; }
+.idc-f { left: 42%; right: 8.5%; top: 13%; bottom: 13%; grid-template-rows: 1.25fr repeat(5, 1fr) .8fr; }
+.idc-t { padding-left: 0; justify-content: flex-start; }
+.idc-t span { padding: 0; background: none; font: 400 calc(var(--k) * 4.6) / 1 var(--f-dot); letter-spacing: .22em; color: var(--ink); }
+.idr { gap: calc(var(--k) * 1.4); padding-bottom: calc(var(--k) * .9); }
+.idr span { padding-bottom: .3em; font: 400 calc(var(--k) * 2.1) / 1 var(--f-px); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.idi { padding: 0 .2em calc(var(--k) * .7); background: radial-gradient(circle, #8a8a8a 0 calc(var(--k) * .22), transparent calc(var(--k) * .26)) 0 100% / calc(var(--k) * 1.1) calc(var(--k) * .6) repeat-x; font: 400 calc(var(--k) * 2.9) / 1.15 var(--f-px); color: var(--ink); }
+.idr.in2 { padding-left: 0; padding-right: 0; }
+.idr.ids { justify-content: flex-start; padding: 0 30% 0 0; } .idr.ids span { font-size: calc(var(--k) * 1.9); opacity: 1; } .idr.ids .idi { flex: 0 1 70%; font-size: calc(var(--k) * 2.1); color: #7a7a7a; }
+.idc-phx { color: var(--ink); }
+
+/* 스티커: 글자가 주인공인 납작한 라벨 블록 (연분홍 · 연하늘 · 흰색 + 먹회색 한 색) */
+.px, .px-lab, .px-row, .px-h, .px-one, .px-lace { --q: calc(var(--pw) * .01); position: relative; color: #575757; }
+.px { box-shadow: none; border-radius: 0; }
+.px-big { font: 300 calc(var(--q) * 7.4) / 1.05 var(--f-thin); letter-spacing: -.02em; }
+.px-big .px-ic { font-size: .62em; vertical-align: -.02em; margin-left: .1em; }
+.px-t .px-ic:not(.px-is .px-ic) { font-size: .6em; vertical-align: .02em; margin-left: .2em; }
+.px-c.hd { margin-top: 0 !important; letter-spacing: .16em; }
+.px-k .px-ic { font-size: 1.1em; vertical-align: -.15em; margin-left: .3em; }
+.px.rc { padding: calc(var(--q) * 2) calc(var(--q) * 2) calc(var(--q) * 1.8); }
+.px-rr { display: flex; align-items: baseline; gap: .5em; margin-top: calc(var(--q) * .7); font: 400 calc(var(--q) * 1.45) / 1.3 var(--f-px-s); letter-spacing: .1em; } .px-rr:first-of-type { margin-top: calc(var(--q) * 1.4); }
+.px-rr em { font-style: normal; } .px-rr i { flex: 1; height: 0; border-bottom: calc(var(--q) * .22) dotted currentColor; opacity: .7; }
+.px-bc { display: block; margin-top: calc(var(--q) * 1.4); font-size: calc(var(--q) * 3); line-height: 0; } .px-bc .px-ic { width: 100%; height: calc(var(--q) * 3); }
+.px-hl.ko { font: 400 calc(var(--q) * 2) / 1 var(--f-px); padding: .35em .4em .3em; }
+.px-hc { position: absolute; right: 6%; bottom: 6%; width: 36%; } .px-hc .px-h b { font-size: calc(var(--q) * 4.6); }
+.px-one { line-height: 0; } .px-one .px-ic { display: block; width: 100%; height: auto; }
+.px-lace { line-height: 0; background: var(--wh); padding: calc(var(--q) * 1.6) 0 calc(var(--q) * 1.4); } .px-lace.pk { background: var(--pk); } .px-lace.sk { background: var(--sk); } .px-lace.bare { background: none; padding: 0; }
+.px-lc { display: block; width: 100%; height: auto; fill: currentColor; }
+.px-lace.hr { display: flex; justify-content: space-around; align-items: center; padding: calc(var(--q) * 1.6) calc(var(--q) * 1.4); font-size: calc(var(--q) * 2.4); }
+.tray-g { grid-template-columns: repeat(auto-fill, 150px); justify-content: space-between; }
+.tray-g button { aspect-ratio: 4 / 3; padding: 10px; background: #efefef; --pw: calc(130px / max(var(--tw), .36)); }
+.tray-g button > div { width: calc(var(--tw) * var(--pw)) !important; }
+.tray-g.g-pixel { grid-template-columns: repeat(auto-fill, 96px); } .tray-g.g-pixel button { aspect-ratio: 1; --pw: 360px; }
+.tray-g .mine { background: var(--wh); border: 0; color: #575757; }

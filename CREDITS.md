@@ -10,28 +10,18 @@
 
 배포본에는 Unsplash 사진이 더 없어요. 예전 사진 스티커(가공본)는 `source/photos/old_ph/`, 원본은 `source/photos/dl/` 에만 남겨 두었어요.
 
-## 스티커 그림 (assets/stk/)
+## 스티커
 
-모두 GPT 이미지 생성 (2026-11-13). 원본 시트는 `source/gen/`, 녹색 배경을 지우고 하나씩 잘라 냄(`source/gen/cut.py`). 그림 안에 글자는 없어요.
-
-| 파일 | 원본 시트 | 내용 |
-| -- | -- | -- |
-| s2_a_0~8, s2_b_0~8 | s2_a.png, s2_b.png | 낙서 동물 (낙서 문구 스티커에도 씀) |
-| s2_c_0~8, s2_d_0~8 | s2_c.png, s2_d.png | 먹을 것 · 책상 소품 |
-| p_folder_0~9 | p_folder.png | 파스텔 폴더 · 편지 · 카세트 등 |
-| p_xs_0~8 | p_xs.png | 십자수 리본 · 열쇠 · 하트 등 |
-| p_tape_0~7, p_frames_0~5, p_win_0~3 | p_tape.png, p_frames.png, p_win.png | 테이프 · 라벨 · 액자 · 창 모양 카드 |
-
-표지 후보(아직 적용 안 함): `source/gen/pc_a.png`, `pc_b.png`, `pc_c.png`.
-
+스티커는 전부 코드(HTML · CSS · 픽셀 SVG)와 글꼴로 그려요. 그림 파일은 쓰지 않아요.
+예전에 GPT 이미지 생성으로 만든 스티커 그림(동물 · 소품 · 십자수 · 테이프 · 액자 · 창)은 배포에서 빼고 `source/gen/old_stk/` 에만 남겨 두었어요.
 
 ## 표지
 
 | 파일 | 출처 | 가공 |
 | -- | -- | -- |
-| assets/cover/cover.webp | GPT 이미지 생성 (2026-11-13, 원본 `source/gen/cv_c.png`). 매끈한 연분홍 가죽, 가장자리 바늘땀, 왼쪽 흰 레이스 띠를 한 장으로 뽑음 | 정사각형 그림을 쪽 비율로 잘라 오른쪽 가장자리를 이어 붙이고(`source/cover/gencover.py`) 분홍을 조금 밝힘 |
+| assets/cover/cover.webp | GPT 이미지 생성 (2026-11-13, 원본 `source/gen/pc_c.png`). 연분홍 바탕에 십자수 리본·열쇠·하트와 도트 레이스 띠. 제목 글자는 코드로 얹음 | 가운데를 쪽 비율로 잘라 줄임 |
 
-쓰지 않은 표지 후보: `source/gen/cv_a.png`, `source/gen/cv_b.png` (GPT 이미지 생성).
+쓰지 않은 표지 후보: `source/gen/pc_a.png`, `pc_b.png`, 예전 가죽 표지 `cv_a.png`, `cv_b.png`, `cv_c.png` (모두 GPT 이미지 생성).
 예전 표지에 쓰던 Unsplash 사진 가공본(가죽·바늘땀·레이스)은 배포에서 빼고 `source/cover/old_assets/` 에만 남겨 두었어요.
 
 ## 화면 무늬
@@ -46,12 +36,9 @@
 
 | 파일 | 원본 | 가공 |
 | -- | -- | -- |
-| assets/fly/idcard_pk.webp | source/gen/w2_idcard_pink.png | 카드 바깥과 사진 칸을 투명하게 따냄 |
-| assets/fly/idcard_sk.webp | source/gen/w2_idcard_pink.png | 같은 그림에서 분홍과 하늘 색만 맞바꿈 |
-| assets/fly/pattern.webp | source/gen/w2_pattern.png | 줄여 씀 |
+| assets/fly/idcard.webp | source/gen/idg_a.png | GPT 이미지 생성. 녹색 배경을 지우고 선 색을 먹회색 한 색으로 맞춤 |
 | assets/fly/bm_pk.webp, bm_sk.webp, bm_dot.webp | source/gen/w2_bookmark.png | 녹색 배경을 지우고 색·무늬만 바꿈 |
 
-| assets/fly/girl.webp | source/gen/girl_a.png | 흰 여백을 잘라 줄임. 카드 사진 칸의 기본 그림 |
+| assets/fly/girl.webp | source/gen/girl3_a.png | GPT 이미지 생성. 사진 칸 비율로 잘라 줄임. 카드 사진 칸의 기본 그림 |
 
-쓰지 않은 그림: `source/gen/w2_idcard_sky.png`, `source/gen/girl_b.png`, `source/gen/girl_c.png`.
-스티커 묶음 「파스텔」과 낙서 문구의 바탕·글자는 코드(SVG·CSS)로 만들었어요.
+쓰지 않은 그림: `source/gen/idg_b.png`, `source/gen/girl_a~c.png`, `source/gen/girl2_a~c.png`, `source/gen/girl3_b.png`, `source/gen/w2_idcard_pink.png`, `source/gen/w2_idcard_sky.png`, `source/gen/w2_pattern.png` (예전 카드와 무늬는 `source/gen/old_fly/`).

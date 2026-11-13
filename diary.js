@@ -224,21 +224,21 @@
   const CLIP = "";
   setTimeout(() => document.body.classList.remove('cv-in'), 3200);   // 표지가 처음 나타날 때만 움직여요
   function coverHtml() {
-    return `<div class="cv">
+    return `<div class="cv"><div class="cv-ttl">MY DIARY<small>${new Date().getFullYear()}</small></div>
       ${!AUTH ? `<form class="cv-code" id="code-f"><p>주인만 열 수 있어요. 내 코드를 적어 주세요</p><input id="code-in" inputmode="text" autocomplete="off" autocapitalize="off" maxlength="24" aria-label="내 코드"><button type="submit">열기</button><p class="err" id="code-err"></p></form>` : '<div class="cv-open">TAP TO OPEN</div>'}</div>`;
   }
   // ── 첫 장: 가로 ID 카드를 글씨가 똑바로 읽히는 방향 그대로 놓아요. 카드 바탕은 그림(assets/fly/idcard_*.webp), 글자·입력 칸·사진은 그 위에 % 자리로 얹어요 ──
   const idTone = () => (DOC.fly.tone === 'sk' ? 'sk' : 'pk');
   function flyHtml() {
-    const f = DOC.fly, tone = idTone();
+    const f = DOC.fly;
     const row = (lab, key, max, al, cls) => `<label class="idr ${cls || ''}">${lab ? `<span>${lab}</span>` : ''}<input class="idi" data-fly="${key}" value="${esc(f[key] || '')}" maxlength="${max}" aria-label="${al || lab}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>`;
-    return `<div class="fly"><div class="idc t-${tone}">
+    return `<div class="fly"><div class="idc">
+      <img class="idc-bg" src="assets/fly/idcard.webp" alt="" draggable="false">
       <button type="button" class="idc-pi" data-idph aria-label="사진 넣기">${f.photo ? `<img data-ph="${esc(f.photo)}" alt="내 사진" draggable="false">` : '<img class="idc-girl" src="assets/fly/girl.webp" alt="" draggable="false">'}</button>
-      <img class="idc-bg" src="assets/fly/idcard_${tone}.webp" alt="" draggable="false">
       <div class="idc-f"><div class="idc-t"><span>ID CARD</span></div>
-        ${row('Name :', 'name', 20)}${row('Birth Day :', 'birth', 20)}${row('Group :', 'group', 24)}${row('Info :', 'vow', 40)}${row('', 'info', 40, 'Info 둘째 줄', 'in2')}
+        ${row('Name', 'name', 20)}${row('Birth Day', 'birth', 20)}${row('Group', 'group', 24)}${row('Info', 'vow', 40)}${row('', 'info', 40, 'Info 둘째 줄', 'in2')}
         ${row('since', 'since', 20, '시작한 날', 'ids')}</div>
-      <div class="idc-opt"><span class="idov-tone" role="group" aria-label="카드 색">${[['pk', '분홍'], ['sk', '하늘']].map(([k, n]) => `<button type="button" data-tone="${k}" class="${tone === k ? 'on' : ''}" aria-label="${n} 카드"></button>`).join('')}</span>${f.photo ? '<button type="button" class="idc-phx" data-phx>사진 빼기</button>' : ''}</div>
+      ${f.photo ? '<div class="idc-opt"><button type="button" class="idc-phx" data-phx>사진 빼기</button></div>' : ''}
 </div></div>`;
   }
   function bindId(card) {
@@ -614,10 +614,10 @@
   function openTray(html, bind) { desel(); tray.innerHTML = `<div class="tray-in">${html}</div>`; tray.classList.remove('hide'); bind && bind(tray); }
   function closeTray() { tray.classList.add('hide'); }
   tray.onclick = (e) => { if (e.target === tray) closeTray(); };
-  let TG = 'doodle';
+  let TG = 'phrase';
   function stkTray() {
     const items = ORDER.filter((k) => STK[k].g === TG);
-    openTray(`<div class="tray-h"><b>붙이기</b>${[['doodle', '낙서'], ['animal', '동물'], ['item', '소품'], ['xs', '십자수'], ['label', '라벨'], ['pastel', '파스텔']].map(([g, n]) => `<button type="button" data-g="${g}" class="${TG === g ? 'on' : ''}">${n}</button>`).join('')}<button type="button" data-x>닫기</button></div><div class="tray-g g-${TG}">${TG === 'doodle' ? '<button type="button" class="mine" data-mine style="--i:0">내 사진 올려서<br>오려 붙이기</button>' : TG === 'label' ? '<button type="button" class="mine" data-note style="--i:0">빈 쪽지 붙이기<br>(내 글씨로 써요)</button>' : ''}${items.map((k, i) => `<button type="button" data-k="${k}" style="--i:${i + 1};--tw:${STK[k].w}" aria-label="${esc(STK[k].n)}"><div>${STK[k].h}</div></button>`).join('')}</div>`, (el) => {
+    openTray(`<div class="tray-h"><b>붙이기</b>${[['phrase', '문구'], ['chip', '낱말 칩'], ['pixel', '픽셀'], ['lace', '레이스']].map(([g, n]) => `<button type="button" data-g="${g}" class="${TG === g ? 'on' : ''}">${n}</button>`).join('')}<button type="button" data-x>닫기</button></div><div class="tray-g g-${TG}">${TG === 'phrase' ? '<button type="button" class="mine" data-mine style="--i:0">내 사진 올려서<br>오려 붙이기</button>' : TG === 'chip' ? '<button type="button" class="mine" data-note style="--i:0">빈 쪽지 붙이기<br>(내 글씨로 써요)</button>' : ''}${items.map((k, i) => `<button type="button" data-k="${k}" style="--i:${i + 1};--tw:${STK[k].w}" aria-label="${esc(STK[k].n)}"><div>${STK[k].h}</div></button>`).join('')}</div>`, (el) => {
       $('[data-x]', el).onclick = closeTray; $$('[data-g]', el).forEach((b) => (b.onclick = () => { TG = b.dataset.g; stkTray(); }));
       const m = $('[data-mine]', el); if (m) m.onclick = () => pickPhoto((id, sh) => addStk('img', { ph: id, sh }));
       const nt = $('[data-note]', el); if (nt) nt.onclick = () => addStk('note', { t: '' });
