@@ -56,6 +56,8 @@
   document.addEventListener('click', (e) => { if (!e.target.closest || !e.target.closest('#snd, #snd-set')) return; e.stopPropagation(); SND = !SND; LS.set('jd:snd', SND ? 1 : 0); sndUi(); snd('tab'); }, true);
   document.addEventListener('input', (e) => { if (e.target.matches && e.target.matches('textarea, .idi, #note-in')) snd('pencil'); }, true);
   sndUi();
+  const sndWake = () => { if (SND) ac(); };
+  document.addEventListener('touchend', sndWake, { passive: true }); document.addEventListener('pointerup', sndWake, { passive: true });
   const pad = (n) => String(n).padStart(2, '0');
   const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const dt = (s) => new Date(s + 'T00:00:00');
@@ -622,8 +624,8 @@
     el.onpointerdown = (e) => {
       if (busy) return; e.stopPropagation(); const pw = el.parentElement.getBoundingClientRect().width, sx = e.clientX, sy = e.clientY, x0 = parseFloat(el.style.getPropertyValue('--x')), y0 = parseFloat(el.style.getPropertyValue('--y')); let moved = false;
       try { el.setPointerCapture(e.pointerId); } catch (x) {}
-      el.onpointermove = (m) => { const dx = m.clientX - sx, dy = m.clientY - sy; if (!moved && Math.hypot(dx, dy) < 5) return; moved = true; dragging = true; el.classList.add('drag'); el.style.setProperty('--x', Math.min(0.98, Math.max(0.02, x0 + dx / pw)).toFixed(4)); el.style.setProperty('--y', Math.max(0.02, y0 + dy / pw).toFixed(4)); };
-      el.onpointerup = el.onpointercancel = () => { el.onpointermove = el.onpointerup = el.onpointercancel = null; el.classList.remove('drag'); setTimeout(() => (dragging = false), 50);
+      el.onpointermove = (m) => { const dx = m.clientX - sx, dy = m.clientY - sy; if (!moved && Math.hypot(dx, dy) < (e.pointerType === 'touch' ? 9 : 5)) return; moved = true; dragging = true; el.classList.add('drag'); el.style.setProperty('--x', Math.min(0.98, Math.max(0.02, x0 + dx / pw)).toFixed(4)); el.style.setProperty('--y', Math.max(0.02, y0 + dy / pw).toFixed(4)); };
+      el.onpointerup = el.onpointercancel = el.onlostpointercapture = () => { if (!el.onpointerup) return; el.onpointermove = el.onpointerup = el.onpointercancel = el.onlostpointercapture = null; el.classList.remove('drag'); setTimeout(() => (dragging = false), 50);
         if (moved) { const id = el.dataset.sid, x = parseFloat(el.style.getPropertyValue('--x')), y = parseFloat(el.style.getPropertyValue('--y')); stkMut(pi, (L) => { const s = L.find((q) => q.id === id); if (s) { s.x = x; s.y = y; } }); }
         else select(el, pi); };
     };
@@ -693,8 +695,20 @@
   // 밀어서 한 장씩
   let tx = 0, ty = 0, tOK = false;
   book.addEventListener('touchstart', (e) => { const t = e.target; tOK = e.touches.length === 1 && !(t.closest && t.closest('.stk, textarea, input, button, #tabs')); tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
-  book.addEventListener('touchend', (e) => { if (!tOK || dragging || busy) return; const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return; if (dx < 0) { if (pos === 0 && !AUTH) return; step(1); } else step(-1); }, { passive: true });
+  book.addEventListener('touchend', (e) => { if (!tOK || dragging || busy || EDIT || SEL || !tray.classList.contains('hide')) return; const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return; if (dx < 0) { if (pos === 0 && !AUTH) return; step(1); } else step(-1); }, { passive: true });
   addEventListener('keydown', (e) => { if (e.target.closest && e.target.closest('textarea, input')) return; if (e.key === 'ArrowRight' && (pos > 0 || AUTH)) step(1); if (e.key === 'ArrowLeft') step(-1); });
+  // 키보드가 올라오면 쓰는 칸이 가려지지 않게 올리고, 내려가면 밀린 화면을 제자리로
+  if (window.visualViewport) {
+    const vv = window.visualViewport; let kbOn = false;
+    const onVV = () => {
+      const kb = Math.max(0, innerHeight - vv.height), on = kb > 120;
+      document.documentElement.style.setProperty('--kb', (on ? kb : 0) + 'px');
+      if (on) { const a = document.activeElement, i = a && a.closest && a.closest('.page .in'); if (i && a.matches('textarea, input')) setTimeout(() => { const r = a.getBoundingClientRect(), top = vv.offsetTop + vv.height * 0.22, lim = vv.offsetTop + vv.height - 56; if (r.top > lim - 60) i.scrollTop += r.top - top; else if (r.bottom > lim && r.top > top) i.scrollTop += Math.min(r.top - top, r.bottom - lim); }, 80); }
+      else if (kbOn) { try { scrollTo(0, 0); } catch (e) {} }
+      kbOn = on;
+    };
+    vv.addEventListener('resize', onVV);
+  }
   let rzT; addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(layout, 80); });
 
   let toastT;
