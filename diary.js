@@ -224,7 +224,7 @@
   const CLIP = "";
   setTimeout(() => document.body.classList.remove('cv-in'), 3200);   // 표지가 처음 나타날 때만 움직여요
   function coverHtml() {
-    return `<div class="cv"><div class="cv-ttl">MY DIARY<small>${new Date().getFullYear()}</small></div>
+    return `<div class="cv"><i class="cv-lace b"></i><div class="cv-ttl">MY DIARY<small>${new Date().getFullYear()}</small></div>
       ${!AUTH ? `<form class="cv-code" id="code-f"><p>주인만 열 수 있어요. 내 코드를 적어 주세요</p><input id="code-in" inputmode="text" autocomplete="off" autocapitalize="off" maxlength="24" aria-label="내 코드"><button type="submit">열기</button><p class="err" id="code-err"></p></form>` : '<div class="cv-open">TAP TO OPEN</div>'}</div>`;
   }
   // ── 첫 장: 가로 ID 카드를 글씨가 똑바로 읽히는 방향 그대로 놓아요. 카드 바탕은 그림(assets/fly/idcard_*.webp), 글자·입력 칸·사진은 그 위에 % 자리로 얹어요 ──
@@ -332,7 +332,7 @@
   const phHtml = (x, cls) => `<div class="pc sh-${esc(x.sh || 'pol')} ${cls || ''}"><div class="pc-i"><img data-ph="${esc(x.id)}" alt="" draggable="false"></div></div>`;
   const entHtml = (e) => {
     const ed = EDIT && EDIT.id === e.id, wr = isW(e);
-    const ph = entPh(e).map((x, n) => `<div class="pc sh-${esc(x.sh || 'pol')}" style="--r:${[-3, 2, -1.5][n % 3]}deg"><div class="pc-i"><img data-ph="${esc(x.id)}" alt="" draggable="false"></div>${ed ? `<button type="button" class="x" data-phx="${esc(x.id)}" aria-label="사진 떼기">×</button>` : ''}</div>`).join('');
+    const ph = entPh(e).map((x, n) => `<div class="pc sh-${esc(x.sh || 'pol')}" style="--r:${[-3, 2, -1.5][n % 3]}deg"><div class="pc-i"><img data-ph="${esc(x.id)}" alt="" draggable="false"></div>${ed ? `<button type="button" class="x" data-phx="${esc(x.id)}" aria-label="사진 떼기">x</button>` : ''}</div>`).join('');
     return `<div class="ent ${ed ? 'editing' : ''}" data-ent="${esc(e.id)}">
       ${ed ? `<textarea id="ent-ta" placeholder="${wr ? '마음에 걸리는 걸 그대로 적어도 돼요. 여긴 나만 보는 곳이에요' : '있었던 일, 기분, 아무 말이나'}">${esc(e.text || '')}</textarea>` : `<div class="ent-t hand">${esc(e.text || '')}</div>`}
       ${ph ? `<div class="ent-ph">${ph}</div>` : ''}
@@ -477,7 +477,7 @@
       fin = () => { slotR.innerHTML = ''; slotR.appendChild(newR); };
     }
     pos = t; sync();
-    setTimeout(() => { fin(); leaves.forEach((l) => l.remove()); busy = false; sync(); }, dur + (n - 1) * ST + 40);
+    setTimeout(() => { fin(); leaves.forEach((l) => l.remove()); busy = false; sync(); if (EQ) { const d = EQ > 0 ? 1 : -1; EQ -= d; step(d); } }, dur + (n - 1) * ST + 40);
   }
   const step = (d) => { if (TWO) { const s = sp(pos) + d; if (s < 0 || s > sp(P.length - 1)) return; go(s === 0 ? 0 : s * 2 - 1); } else { let t = pos + d; if (d > 0 && P[pos] && P[pos].t === 'ins') t++; if (P[t] && P[t].t === 'ins') t += d; go(t); } };
 
@@ -547,7 +547,7 @@
   }
 
   // ── 사진 올리기 → 자르기 ──
-  const SHAPES = [['pol', '폴라로이드', 1], ['sq', '네모', 1], ['round', '둥글게', 1], ['arch', '아치', 3 / 4], ['torn', '찢은 종이', 4 / 3]];
+  const SHAPES = [['pol', '흰 테두리', 1], ['sq', '테두리 없이', 1], ['round', '둥글게', 1], ['arch', '아치', 3 / 4], ['torn', '가로 점선', 4 / 3]];
   function pickPhoto(done) { const f = $('#file'); f.value = ''; f.onchange = () => { const file = f.files && f.files[0]; if (file) cropOpen(file, done); }; f.click(); }
   function cropOpen(file, done) {
     const el = $('#crop'), im = new Image(), url = URL.createObjectURL(file); let sh = 'pol', z = 1, x = 0, y = 0, cw = 300, ch = 300, min = 1;
@@ -596,18 +596,31 @@
   let justDesel = false;
   book.addEventListener('pointerdown', (e) => { justDesel = false; const pg = e.target.closest && e.target.closest('.slot > .page'); if (pg) STKPAGE = +pg.dataset.pi; if (SEL && !(e.target.closest && e.target.closest('.stk'))) { desel(); justDesel = true; } }, true);
   // 쪽 바깥 가장자리(빈 종이)를 누르면 한 장 넘어가요. 누른 쪽 귀퉁이가 살짝 들려요
-  book.addEventListener('click', (e) => {
-    if (busy || dragging || EDIT || SEL || justDesel || pos === 0) return;
-    const pg = e.target.closest('.slot > .page'); if (!pg || pg.classList.contains('cover')) return;
-    if (e.target.closest('.stk, button, textarea, input, a, label, .cell, .ent, .did-box, .fld, .set, .ym, .toc-l, .row, .pc, .mine, .cal, .fonts, .dp-h, .dp-plan, .wsum, .lst-h, .ask')) return;
-    const r = pg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, left = pg.classList.contains('sl');
-    const d = !left && x > 5 / 6 ? 1 : (left || !TWO) && x < 1 / 6 ? -1 : 0; if (!d || (d > 0 && $('#b-next').disabled)) return;
-    const c = document.createElement('div'); c.className = 'curl ' + (d > 0 ? 'r' : 'l'); pg.appendChild(c); busy = true;
-    setTimeout(() => { busy = false; c.remove(); step(d); }, 260);
+  // 가장자리를 눌러 넘기기: 왼쪽 가장자리 = 앞으로, 오른쪽 가장자리 = 다음으로.
+  // 쪽 안쪽 EZ px + 종이 겹친 테두리 + 책 바깥 여백 끝까지, 위에서 아래까지. 단추 · 입력 칸 · 스티커 · 탭 위에서는 그 요소가 먼저예요
+  const EZ = () => Math.min(76, Math.round(book.getBoundingClientRect().width * (TWO ? 0.1 : 0.2)));
+  const NOEDGE = '.stk, button, textarea, input, select, a, label, [data-jump], [role="button"], .pc, #tabs, #tool, #tray, #bm';
+  const edgeDir = (e) => {
+    if (dragging || EDIT || SEL || justDesel || pos === 0 || !tray.classList.contains('hide')) return 0;
+    if (e.target.closest && e.target.closest(NOEDGE)) return 0;
+    const r = book.getBoundingClientRect(), z = EZ(); if (e.clientY < r.top - 8 || e.clientY > r.bottom + 8) return 0;
+    return e.clientX <= r.left + z ? -1 : e.clientX >= r.right - z ? 1 : 0;
+  };
+  let EQ = 0;   // 넘기는 중에 또 누른 횟수 (끝나면 이어서 넘겨요)
+  const stage = $('#stage');
+  stage.addEventListener('pointerdown', (e) => {
+    const d = edgeDir(e); if (!d || busy) return;
+    const pg = $(`.slot.${d > 0 ? 'R' : TWO ? 'L' : 'R'} > .page`); if (!pg || pg.classList.contains('cover')) return;
+    const c = document.createElement('div'); c.className = 'curl ' + (d > 0 ? 'r' : 'l'); pg.appendChild(c); setTimeout(() => c.remove(), 420);
+  });
+  stage.addEventListener('click', (e) => {
+    const d = edgeDir(e); if (!d || (d > 0 && $('#b-next').disabled)) return;
+    if (busy) { EQ = Math.max(-3, Math.min(3, EQ + d)); return; }
+    $$('.curl').forEach((c) => c.remove()); step(d);
   });
   function addStk(k, extra) {
     const v = view(pos); let pi = [v.L, v.R].includes(STKPAGE) ? STKPAGE : v.R >= 0 ? v.R : v.L; if (P[pi].t === 'cover') return;
-    const pg = $(`.slot > .page[data-pi="${pi}"]`), sc = $('.in', pg); if (!sc) return; const pw = pg.clientWidth, y = (sc.scrollTop + sc.clientHeight * 0.45) / pw, s = { id: 's' + uid(), k, x: +(0.5 + (Math.random() - 0.5) * 0.2).toFixed(3), y: +y.toFixed(4), r: Math.round((Math.random() - 0.5) * 12), s: 1, ...(extra || {}) };
+    const pg = $(`.slot > .page[data-pi="${pi}"]`), sc = $('.in', pg); if (!sc) return; const pw = pg.clientWidth, y = (sc.scrollTop + sc.clientHeight * (0.3 + Math.random() * 0.3)) / pw, s = { id: 's' + uid(), k, x: +(0.5 + (Math.random() - 0.5) * 0.4).toFixed(3), y: +y.toFixed(4), r: 0, s: 1, ...(extra || {}) };
     stkMut(pi, (L) => L.push(s)); const tmp = document.createElement('div'); tmp.innerHTML = stkHtml(s, 'new'); const el = tmp.firstElementChild; $('.sheet', pg).appendChild(el); fillPhotos(el); bindStk(el, pi); closeTray();
     if (k === 'note') setTimeout(() => { select(el, pi); const b = $('[data-t="tx"]', tool); if (b) b.click(); }, 350);
   }

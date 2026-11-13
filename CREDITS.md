@@ -19,8 +19,10 @@
 
 | 파일 | 출처 | 가공 |
 | -- | -- | -- |
-| assets/cover/cover.webp | GPT 이미지 생성 (2026-11-13, 원본 `source/gen/pc_c.png`). 연분홍 바탕에 십자수 리본·열쇠·하트와 도트 레이스 띠. 제목 글자는 코드로 얹음 | 가운데를 쪽 비율로 잘라 줄임 |
+| assets/cover/cover.webp | GPT 이미지 생성 (2026-11-13, 원본 `source/gen/pc_c.png`). 연분홍 바탕에 십자수 리본·열쇠·하트와 도트 레이스 띠. 제목 글자는 코드로 얹음 | 가운데를 쪽 비율로 잘라 줄이고, 위아래 끝의 흰 도트 띠는 분홍으로 덮음 |
+| assets/cover/lace.webp | GPT 이미지 생성 (2026-11-13, 원본 `source/gen/lace2_a.png`). 얇은 망사에 작은 꽃과 덩굴을 수놓은 흰 레이스 | 초록 바탕을 빼서 비치게 하고 무늬 두 마디만 잘라 이어 붙임 |
 
+쓰지 않은 레이스 후보: `source/gen/lace_a.png`, `lace_b.png`, `lace2_c.png`, `lace2_d.png` (모두 GPT 이미지 생성).
 쓰지 않은 표지 후보: `source/gen/pc_a.png`, `pc_b.png`, 예전 가죽 표지 `cv_a.png`, `cv_b.png`, `cv_c.png` (모두 GPT 이미지 생성).
 예전 표지에 쓰던 Unsplash 사진 가공본(가죽·바늘땀·레이스)은 배포에서 빼고 `source/cover/old_assets/` 에만 남겨 두었어요.
 

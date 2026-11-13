@@ -111,5 +111,99 @@
     l_hearts: S('lace', 0.36, '하트 점선 띠', `<div class="px-lace pk hr">${Array(7).fill(I('heart')).join('')}</div>`),
     l_short: S('lace', 0.24, '짧은 분홍 레이스', `<div class="px-lace pk">${lace(3)}</div>`),
   };
+
+  // ── 더 많은 스티커 (같은 결): 디더링 비트맵 그림 · 다른 모양 블록 · 요일/과목 칩 · 레이스 무늬 ──
+  Object.assign(R, {
+    spark: ['..X..', '..X..', 'XX.XX', '..X..', '..X..'], box: ['XXXXX', 'X...X', 'X...X', 'X...X', 'XXXXX'], boxon: ['XXXXX', 'XX.XX', 'X.X.X', 'XX.XX', 'XXXXX'],
+    check: ['......X', '.....X.', 'X...X..', '.X.X...', '..X....'], play: ['X....', 'XXX..', 'XXXXX', 'XXX..', 'X....'], plus: ['.X.', 'XXX', '.X.'],
+    flag: ['XXXXX.', 'XoooXX', 'XoooX.', 'XXXXX.', 'X.....', 'X.....', 'X.....'], glass: ['XXXXX', 'X...X', '.X.X.', '..X..', '.X.X.', 'XoooX', 'XXXXX'],
+    talk: ['.XXXXXXX.', 'X.......X', 'X.X.X.X.X', 'X.......X', '.XXXXXXX.', '..XX.....', '..X......'], zzz: ['XXXX....', '..X.....', '.X...XXX', 'XXXX..X.', '.....XXX'],
+    clip: ['.XXX.', 'X...X', 'X.X.X', 'X.X.X', 'X.X.X', '..X.X', '..XXX'], wave: ['.XX...XX...XX..', 'X..X.X..X.X..X.', '....X....X....X'],
+  });
+  // 거칠게 깨진 흑백 비트맵: 모양 안쪽을 어둡기에 따라 점을 성기게 찍어요 (4x4 디더링), 가장자리는 진하게
+  const BAY = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+  const bmp = (w, h, fn) => {
+    const g = []; for (let y = 0; y < h; y++) { g.push([]); for (let x = 0; x < w; x++) g[y].push(fn(x, y)); }
+    const ins = (x, y) => x >= 0 && y >= 0 && x < w && y < h && g[y][x] >= 0, o = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const d = g[y][x]; if (d < 0) continue; const edge = !ins(x - 1, y) || !ins(x + 1, y) || !ins(x, y - 1) || !ins(x, y + 1); if (edge || d > (BAY[y % 4][x % 4] + 0.5) / 16) o.push(`<rect x="${x}" y="${y}" width="${D}" height="${D}"/>`); }
+    return `<div class="px-one"><svg class="px-ic" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">${o.join('')}</svg></div>`;
+  };
+  const C = (x, y, cx, cy, r) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r, E = (x, y, cx, cy, a, b) => ((x - cx) / a) ** 2 + ((y - cy) / b) ** 2 <= 1;
+  const B_CLOUD = bmp(26, 16, (x, y) => (C(x, y, 8, 10, 5) || C(x, y, 13, 7, 6) || C(x, y, 19, 10, 5) || (x >= 6 && x <= 20 && y >= 10 && y <= 14) ? 0.1 + (y / 16) * 0.55 : -1));
+  const B_MOON = bmp(18, 18, (x, y) => (C(x, y, 8.5, 8.5, 8) && !C(x, y, 12, 6.5, 7) ? 0.25 + (y / 18) * 0.5 : -1));
+  const B_FLOWER = bmp(19, 25, (x, y) => { if (C(x, y, 9, 8, 2.3)) return 1; for (let k = 0; k < 5; k++) { const a = (k * 72 - 90) * Math.PI / 180; if (C(x, y, 9 + Math.cos(a) * 4.6, 8 + Math.sin(a) * 4.6, 3.1)) return 0.18; } if (Math.abs(x - 9) < 1 && y > 12 && y < 25) return 1; if (E(x, y, 12.5, 19.5, 3, 1.7)) return 0.6; return -1; });
+  const B_CUP = bmp(20, 19, (x, y) => { if ((x === 6 || x === 10) && y <= 4) return y % 2 ? -1 : 1; if ((x === 7 || x === 11) && y <= 4 && y % 2) return 1; if (x >= 3 && x <= 13 && y >= 7 && y <= 17 && !((x === 3 || x === 13) && y === 17)) return 0.15 + ((x - 3) / 10) * 0.6; if (C(x, y, 14.5, 11.5, 4) && !C(x, y, 14.5, 11.5, 2.2) && x > 13) return 1; return -1; });
+  const B_BOOK = bmp(23, 16, (x, y) => { if (y === 14 && x >= 0 && x <= 22) return 1; if (!(x >= 1 && x <= 21 && y >= 2 && y <= 13)) return -1; if (x === 11) return 1; if (y % 2 && y >= 5 && y <= 11 && ((x >= 3 && x <= 9) || (x >= 13 && x <= 19))) return 1; return 0.1; });
+  const B_PENCIL = bmp(20, 20, (x, y) => { const a = x, b = 19 - y, al = (a + b) / 2, ac = (a - b) / 2; if (al >= 5 && al <= 15 && Math.abs(ac) <= 2) return Math.abs(ac) < 0.5 ? 1 : 0.22; if (al >= 1.5 && al < 5 && Math.abs(ac) <= (al - 1.5) * 0.62) return al < 3 ? 1 : 0.05; if (al > 15 && al <= 17.5 && Math.abs(ac) <= 2) return 0.85; return -1; });
+  const B_CAT = bmp(21, 23, (x, y) => { const ear = (cx) => y <= 5 && y >= 0 && Math.abs(x - cx) <= y * 0.55; if (E(x, y, 9, 16, 6.2, 6.4) || C(x, y, 9, 7.5, 4.4) || ear(6) || ear(12) || (C(x, y, 15, 18, 4.2) && !C(x, y, 15, 18, 2.6) && x >= 14)) return 0.5 + (x / 21) * 0.5; return -1; });
+  const B_SUN = bmp(19, 19, (x, y) => { const dx = x - 9, dy = y - 9, r = Math.hypot(dx, dy); if (r <= 4.6) return 0.28; if (r >= 6.4 && r <= 8.8 && (Math.abs(dx) < 0.6 || Math.abs(dy) < 0.6 || Math.abs(Math.abs(dx) - Math.abs(dy)) < 0.8)) return 1; return -1; });
+  const B_HEART = bmp(21, 19, (x, y) => { const X = (x - 10) / 8.2, Y = (8.5 - y) / 8.2 + 0.12; return (X * X + Y * Y - 1) ** 3 - X * X * Y * Y * Y <= 0 ? 0.2 + (y / 19) * 0.65 : -1; });
+  const B_BULB = bmp(15, 21, (x, y) => { if (C(x, y, 7, 7, 6.2)) return 0.1 + (x / 15) * 0.4; if (x >= 4 && x <= 10 && y > 12 && y <= 15) return 0.3; if (x >= 5 && x <= 9 && y > 15 && y <= 19) return y % 2 ? 1 : 0.2; return -1; });
+  // 레이스 무늬: 점 좌표를 만든 다음 가로 · 세로 · 모서리로 놓아요
+  const pat = (kind, n) => {
+    const d = []; let T = 12, H = 10;
+    for (let i = 0; i < n; i++) {
+      if (kind === 'zig') { T = 12; H = 11; const b = i * T; for (let x = 0; x < T; x++) { if (x % 2 === 0) d.push([b + x, 0]); d.push([b + x, 2 + (6 - Math.abs(x - 6))]); } [[6, 9], [5, 10], [7, 10], [6, 11]].forEach(([x, y]) => d.push([b + x, y - 1])); }
+      else if (kind === 'xs') { T = 6; H = 7; const b = i * T; [[0, 2], [2, 2], [1, 3], [0, 4], [2, 4]].forEach(([x, y]) => d.push([b + x + 1, y])); for (let x = 0; x < T; x += 2) { d.push([b + x, 0]); d.push([b + x, 6]); } }
+      else if (kind === 'eye') { T = 8; H = 9; const b = i * T; [[3, 2], [4, 2], [2, 3], [5, 3], [2, 4], [5, 4], [3, 5], [4, 5]].forEach(([x, y]) => d.push([b + x, y])); d.push([b, 4]); for (let x = 0; x < T; x++) { d.push([b + x, 0]); d.push([b + x, 8]); } }
+      else if (kind === 'hl') { T = 14; H = 8; const b = i * T; R.heart.forEach((r, y) => r.split('').forEach((c, x) => c === 'X' && d.push([b + x + 3, y + 1]))); [0, 12].forEach((x) => { d.push([b + x, 3]); d.push([b + x, 4]); }); }
+      else { T = 16; H = 13; const b = i * T; for (let x = 0; x < T; x++) { if (x % 2 === 0) { d.push([b + x, 0]); d.push([b + x, 2]); } d.push([b + x, 4 + Math.round(7 * Math.sqrt(Math.max(0, 1 - ((x - 7.5) / 8) ** 2)))]); } [[7, 5], [8, 5], [6, 6], [9, 6], [7, 7], [8, 7]].forEach(([x, y]) => d.push([b + x, y])); d.push([b, 6]); }
+    }
+    return { d, W: n * T, H };
+  };
+  const dots = (d) => d.map(([x, y]) => `<rect x="${x}" y="${y}" width="${D}" height="${D}"/>`).join('');
+  const band = (kind, n, c) => { const p = pat(kind, n); return `<div class="px-lace ${c || ''}"><svg class="px-lc" viewBox="0 -1 ${p.W} ${p.H + 2}" xmlns="http://www.w3.org/2000/svg">${dots(p.d)}</svg></div>`; };
+  const vband = (kind, n, c) => { const p = pat(kind, n); return `<div class="px-lace v ${c || ''}"><svg class="px-lc" viewBox="-1 0 ${p.H + 2} ${p.W}" xmlns="http://www.w3.org/2000/svg">${dots(p.d.map(([x, y]) => [y, x]))}</svg></div>`; };
+  const corner = (kind, n, c) => { const p = pat(kind, n); return `<div class="px-lace bare ${c || ''}"><svg class="px-lc" viewBox="-1 -1 ${p.W + 1} ${p.W + 1}" xmlns="http://www.w3.org/2000/svg">${dots(p.d.concat(p.d.filter(([x]) => x > p.H).map(([x, y]) => [y, x])))}</svg></div>`; };
+  const chk = (rows) => rows.map(([on, t]) => `${I(on ? 'boxon' : 'box')}${t}`).join('<br>');
+  const lines = (n) => Array(n).fill('<i class="px-l"></i>').join('');
+  const add = {
+    // 문구
+    p_band1: S('phrase', 0.46, '분홍 긴 띠', `<div class="px pk bd"><p class="px-c">TODAY I DID MY BEST ${I('heart')} TODAY I DID MY BEST</p></div>`),
+    p_band2: S('phrase', 0.4, '하늘 긴 띠 수고했어', `<div class="px sk bd"><p class="px-k">오늘도 수고했어 ${I('spark')} 오늘도 수고했어</p></div>`),
+    p_band3: S('phrase', 0.42, '흰 긴 띠 바코드', `<div class="px bd rwc"><p class="px-c">NO. 0001 ${I('arrow')} KEEP GOING</p><span class="px-bc s">${I('bar')}</span></div>`),
+    p_sq1: S('phrase', 0.19, '흰 정사각 ok', `<div class="px sq"><p class="px-big">ok.</p><p class="px-c">IT IS FINE<br>REALLY</p></div>`),
+    p_sq2: S('phrase', 0.19, '분홍 정사각 괜찮아', `<div class="px pk sq"><p class="px-k big">괜찮아</p><p class="px-c">BREATHE IN<br>BREATHE OUT ${I('heart')}</p></div>`),
+    p_sq3: S('phrase', 0.19, '하늘 정사각 D-7', `<div class="px sk sq"><p class="px-big">D-7</p><p class="px-k">시험까지</p></div>`),
+    p_rcpt2: S('phrase', 0.24, '흰 블록 공부 기록', `<div class="px rc"><p class="px-c hd">STUDY LOG</p>${rc([['국어', '40M'], ['수학', '90M'], ['영어', '30M'], ['과학', '50M'], ['간식', 'X2']])}<p class="px-c">TOTAL : 잘 버팀</p><span class="px-bc">${I('bar')}</span></div>`),
+    p_rcpt3: S('phrase', 0.22, '분홍 블록 오늘 기분 영수증', `<div class="px pk rc"><p class="px-c hd">MOOD CHECK</p>${rc([['SLEEP', '6H'], ['ENERGY', '70%'], ['SMILE', 'X5']])}<p class="px-c">THANK YOU, ME ${I('heart')}</p></div>`),
+    p_split1: S('phrase', 0.38, '두 칸 라벨', `<div class="px sp"><div class="pk"><p class="px-c">NO.</p><p class="px-d">001</p></div><div><p class="px-t sm">keep going</p><p class="px-k">계속 가는 중 ${I('arrow')}</p></div></div>`),
+    p_split2: S('phrase', 0.38, '두 칸 라벨 과목', `<div class="px sp"><div class="sk"><p class="px-c">SUBJECT</p><p class="px-k big">수학</p></div><div><p class="px-c">PAGE ........ TO ........<br>DONE ${I('box')} &nbsp; AGAIN ${I('box')}</p></div></div>`),
+    p_chk1: S('phrase', 0.27, '흰 블록 체크리스트', `<div class="px"><p class="px-t sm">to do</p><p class="px-c ck">${chk([[1, 'WAKE UP ON TIME'], [1, 'PACK MY BAG'], [0, 'REVIEW MY NOTES'], [0, 'SLEEP BEFORE 12']])}</p></div>`),
+    p_chk2: S('phrase', 0.25, '분홍 블록 오늘의 체크', `<div class="px pk"><p class="px-k big">오늘의 체크</p><p class="px-k ck">${chk([[1, '물 마시기'], [1, '단어 외우기'], [0, '오답 정리'], [0, '일찍 자기']])}</p></div>`),
+    p_stamp: S('phrase', 0.22, '분홍 날짜 도장', `<div class="px pk ce st"><p class="px-c">CHECKED ${I('check')}</p><p class="px-d">DONE</p><p class="px-c">20__ . __ . __</p></div>`),
+    p_play: S('phrase', 0.33, '하늘 블록 플레이리스트', `<div class="px sk"><p class="px-c hd">NOW PLAYING ${I('note')}</p><p class="px-t sm">study mix no.3</p><span class="px-pg"><i></i></span><p class="px-c">${I('play')} 2:14 / 3:40</p></div>`),
+    p_tt: S('phrase', 0.26, '흰 블록 시간표 쪽지', `<div class="px"><p class="px-c hd">TIME TABLE</p><p class="px-k tt"><b>1</b>국어<b>2</b>수학<b>3</b>영어<b>4</b>체육<b>5</b>과학<b>6</b>자습</p></div>`),
+    p_memo: S('phrase', 0.28, '분홍 블록 메모 줄', `<div class="px pk"><p class="px-c hd">MEMO ${I('clip')}</p>${lines(4)}</div>`),
+    p_memo2: S('phrase', 0.28, '흰 블록 메모 줄', `<div class="px"><p class="px-c hd">NOTE ${I('heart')}</p>${lines(4)}</div>`),
+    p_ko5: S('phrase', 0.34, '흰 블록 할 수 있다', `<div class="px"><p class="px-k big">할 수 있다<br>아니 이미 하고 있다</p><p class="px-c">YOU ARE ALREADY DOING IT ${I('flag')}</p></div>`),
+    p_ko6: S('phrase', 0.3, '하늘 블록 오늘의 기분', `<div class="px sk"><p class="px-k big">오늘의 기분<br>대체로 맑음</p><p class="px-c">MOSTLY SUNNY ${I('spark')}</p></div>`),
+    p_ko7: S('phrase', 0.3, '분홍 블록 쉬는 시간', `<div class="px pk"><p class="px-k big">쉬는 것도<br>계획에 있었다</p><p class="px-c">REST IS ON THE LIST ${I('zzz')}</p></div>`),
+    p_ko8: S('phrase', 0.31, '흰 블록 오답', `<div class="px"><p class="px-k big">틀린 문제는<br>내일의 정답</p><p class="px-c">WRONG TODAY, RIGHT TOMORROW ${I('check')}</p></div>`),
+    p_night: S('phrase', 0.32, '분홍 블록 good night', `<div class="px pk"><p class="px-t">good night, ${I('moon')}</p><p class="px-c">TOMORROW IS A NEW PAGE</p></div>`),
+    p_exam: S('phrase', 0.3, '흰 블록 exam week', `<div class="px"><p class="px-t">exam week ${I('glass')}</p><p class="px-c">EAT WELL, SLEEP WELL<br>THEN STUDY</p></div>`),
+    p_pause: S('phrase', 0.22, '하늘 블록 PAUSE', `<div class="px sk"><p class="px-d">PAUSE.<br>BREATHE.<br>CONTINUE.</p></div>`),
+    // 낱말 칩
+    ...Object.fromEntries(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((t, i) => [`c_${t.toLowerCase()}`, S('chip', 0.085, `요일 칩 ${t}`, lab(t, `cp${i % 2 ? ' pk' : ''}`))])),
+    ...Object.fromEntries(['D-1', 'D-7', 'D-30', 'D-100'].map((t, i) => [`c_d${i}`, S('chip', 0.09 + i * 0.01, `디데이 칩 ${t}`, lab(t, `cp${i % 2 ? '' : ' pk'}`))])),
+    ...Object.fromEntries(['국어', '수학', '영어', '과학', '사회', '역사'].map((t, i) => [`c_s${i}`, S('chip', 0.1, `과목 칩 ${t}`, lab(t, `ko${i % 2 ? ' pk' : ''}`))])),
+    ...Object.fromEntries(['맑음', '흐림', '설렘', '피곤', '뿌듯', '멍함'].map((t, i) => [`c_m${i}`, S('chip', 0.1, `기분 칩 ${t}`, lab(t, `ko${i % 2 ? '' : ' pk'}`))])),
+    ...Object.fromEntries(['수행평가', '시험 기간', '쉬는 날', '오답 노트'].map((t, i) => [`c_k${i}`, S('chip', 0.14, `칩 ${t}`, lab(t, `ko${i % 2 ? ' pk' : ''}`))])),
+    p_drops4: S('chip', 0.3, '점 흩어진 블록 요일', `<div class="px dr">${drops('pk', [[14, 28], [62, 12], [44, 46], [86, 50], [26, 82]])}${drops('sk', [[36, 12], [88, 22], [8, 60], [68, 68], [46, 88]])}${chip('MON', 'cp', 'left:10%;top:10%')}${chip('WED', 'cp pk', 'left:58%;top:28%')}${chip('FRI', 'cp pk', 'left:14%;top:54%')}${chip('SUN', 'cp', 'left:58%;top:74%')}</div>`),
+    p_heart4: S('chip', 0.2, '하늘 하트 Hello', PH('sk', 'Hello')),
+    // 픽셀
+    b_flower: S('pixel', 0.11, '비트맵 꽃', B_FLOWER), b_cup: S('pixel', 0.12, '비트맵 컵', B_CUP), b_book: S('pixel', 0.14, '비트맵 책', B_BOOK), b_pencil: S('pixel', 0.12, '비트맵 연필', B_PENCIL),
+    b_cloud: S('pixel', 0.15, '비트맵 구름', B_CLOUD), b_moon: S('pixel', 0.11, '비트맵 달', B_MOON), b_cat: S('pixel', 0.12, '비트맵 고양이 뒷모습', B_CAT), b_sun: S('pixel', 0.11, '비트맵 해', B_SUN),
+    b_heart: S('pixel', 0.12, '비트맵 하트', B_HEART), b_bulb: S('pixel', 0.09, '비트맵 전구', B_BULB),
+    ...Object.fromEntries([['spark', 0.05, '반짝'], ['check', 0.07, '체크'], ['box', 0.05, '빈 네모'], ['boxon', 0.05, '찬 네모'], ['play', 0.05, '재생'], ['flag', 0.06, '깃발'], ['glass', 0.05, '모래시계'], ['talk', 0.09, '말풍선'], ['zzz', 0.08, '졸음'], ['clip', 0.05, '클립'], ['wave', 0.15, '물결']].map(([k, w, n]) => [`x_${k}`, S('pixel', w, `픽셀 ${n}`, one(k))])),
+    // 레이스
+    l_zig: S('lace', 0.46, '분홍 세모 레이스', band('zig', 8, 'pk')), l_zig2: S('lace', 0.46, '흰 세모 레이스', band('zig', 8)),
+    l_xs: S('lace', 0.46, '하늘 십자수 띠', band('xs', 16, 'sk')), l_xs2: S('lace', 0.4, '바탕 없는 십자수 띠', band('xs', 14, 'bare')),
+    l_eye: S('lace', 0.46, '분홍 구멍 레이스', band('eye', 12, 'pk')), l_eye2: S('lace', 0.46, '흰 구멍 레이스', band('eye', 12)),
+    l_hl: S('lace', 0.42, '하늘 하트 띠', band('hl', 7, 'sk')), l_hl2: S('lace', 0.36, '바탕 없는 하트 띠', band('hl', 6, 'bare')),
+    l_v1: S('lace', 0.075, '분홍 세로 레이스', vband('sc', 5, 'pk')), l_v2: S('lace', 0.075, '하늘 세로 레이스', vband('sc', 5, 'sk')), l_v3: S('lace', 0.05, '바탕 없는 세로 십자수', vband('xs', 12, 'bare')),
+    l_c1: S('lace', 0.2, '모서리 레이스', corner('sc', 3)), l_c2: S('lace', 0.2, '모서리 세모 레이스', corner('zig', 4)),
+  };
+  Object.assign(window.STK, add);
   window.STK_ORDER = Object.keys(window.STK);
 })();

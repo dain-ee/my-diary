@@ -768,3 +768,55 @@ body.closed #here { opacity: 0; }
 .bmset { gap: calc(var(--u) * 4); } .bmset button, .bmset button.on { padding: 0; background: none; gap: calc(var(--u) * .8); }
 .bmset img { width: calc(var(--u) * 2.9); height: calc(var(--u) * 12); opacity: .7; } .bmset .on img { opacity: 1; }
 .bmset small { display: flex; align-items: center; gap: .4em; } .bmset button:not(.on) .set-ht { display: none; }
+
+/* 스티커 블록 모양 더: 긴 띠 · 정사각 · 두 칸 · 체크리스트 · 도장 · 플레이리스트 · 시간표 · 메모 줄 */
+.px.bd { padding: calc(var(--q) * 1.3) calc(var(--q) * 2); text-align: center; } .px.bd p { margin-top: 0 !important; }
+.px.bd.rwc { display: flex; align-items: center; gap: calc(var(--q) * 2); text-align: left; } .px-bc.s { flex: 1; margin-top: 0; } .px-bc.s .px-ic { height: calc(var(--q) * 2); }
+.px.sq { aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: calc(var(--q) * 1.4); } .px.sq .px-big { font-size: calc(var(--q) * 6.4); } .px.sq .px-k:not(.big) { margin-top: calc(var(--q) * .8) !important; }
+.px.sp { display: flex; padding: 0; background: var(--wh); } .px.sp > div { padding: calc(var(--q) * 1.8) calc(var(--q) * 2); display: flex; flex-direction: column; justify-content: center; } .px.sp > div:first-child { flex: none; text-align: center; } .px.sp > .pk { background: var(--pk); } .px.sp > .sk { background: var(--sk); } .px.sp .px-c:first-child { margin-top: 0 !important; } .px.sp .px-d { margin-top: calc(var(--q) * .6); } .px.sp .px-k { margin-top: calc(var(--q) * .6) !important; }
+.px .ck { line-height: 1.9; } .px .ck .px-ic { font-size: 1.05em; margin: 0 .7em 0 0; vertical-align: -.12em; } .px-c .px-ic[viewBox="0 0 5 5"] { font-size: 1.05em; vertical-align: -.1em; }
+.px.st .px-d { font-size: calc(var(--q) * 4.2); line-height: 1.25; letter-spacing: .2em; padding-left: .2em; } .px.st .px-c:first-child { margin-top: 0 !important; }
+.px-pg { display: block; position: relative; height: 0; margin: calc(var(--q) * 1.6) 0 calc(var(--q) * .2); border-bottom: calc(var(--q) * .3) dotted currentColor; } .px-pg i { position: absolute; left: 0; top: calc(var(--q) * -.15); width: 58%; height: calc(var(--q) * .6); background: currentColor; }
+.px-k.tt { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: calc(var(--q) * .5) calc(var(--q) * 1.2); align-items: baseline; } .px-k.tt b { font: 400 calc(var(--q) * 1.45) / 1 var(--f-px-s); opacity: .8; }
+.px-l { display: block; height: calc(var(--q) * 2.6); border-bottom: calc(var(--q) * .22) dotted currentColor; opacity: .75; }
+.px-lab.cp, .px-hl.cp { font: 400 calc(var(--q) * 1.9) / 1 var(--f-px); letter-spacing: .12em; padding: .4em .35em .32em .5em; }
+.px-lace.v { padding: 0 calc(var(--q) * .9); }
+.tray-g.g-lace button, .tray-g.g-phrase button, .tray-g.g-chip button { overflow: hidden; } .tray-g button > div { max-height: 100%; }
+.tray-g.g-lace button > .px-lace.v, .tray-g.g-lace button > div:has(> .px-lace.v) { width: 22px !important; }
+/* 쓰기 칸: 흰 판 없이 모눈 위에 바로 */
+.ent.editing { background: none; box-shadow: none; padding-left: 0; padding-right: 0; border-bottom-color: rgba(107, 107, 107, .5); }
+
+/* 사진 틀: 납작하게. 그림자 · 기울임 · 베이지 종이 없이 얇은 흰 테두리 / 먹회색 점선 / 연분홍 띠 */
+.pc, .stk:has(.sh-torn) { filter: none; } .ent-ph .pc, .phg .pc { transform: none; }
+.sh-pol { padding: max(3px, calc(var(--pw) * .006)); background: #fff; background-image: none; outline: 0; box-shadow: 0 0 0 .5px rgba(107, 107, 107, .3); }
+.sh-sq .pc-i { border: 0; }
+.sh-round .pc-i, .sh-arch .pc-i { border-width: calc(var(--pw) * .007); box-shadow: 0 0 0 .5px rgba(107, 107, 107, .3); }
+.sh-torn { clip-path: none; padding: max(3px, calc(var(--pw) * .007)); background: #fff; border: max(1.5px, calc(var(--pw) * .003)) dotted #6b6b6b; }
+.sh-tape::before { top: -4%; height: 9%; background: var(--pk); background-image: none; transform: none; opacity: .9; }
+.ent-ph { gap: calc(var(--u) * 1.6); align-items: flex-start; margin-top: calc(var(--u) * 1.6); } .ent-ph .pc { width: 30%; }
+.ent-ph .x { right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 0; background: rgba(255, 255, 255, .92); color: #575757; font: 400 12px/19px var(--f-px); }
+.ent-b .lbtn { height: calc(var(--u) * 4.6); padding: 0 calc(var(--u) * 1.6); font-size: max(10px, calc(var(--u) * 1.9)); }
+
+/* 점검에서 고친 것: 흰 판 걷어 내고 라벨 색 하나로 */
+.cell, .cell-t { background: none; } .cell { border-bottom: 1px dotted rgba(107, 107, 107, .45); } .cell.today { background: none; }
+.mc-d { background: none; } .mo2-w button { background: none; border-bottom: 1px dotted rgba(107, 107, 107, .45); } .mo2-w button.cur { background: var(--pk); border-bottom-color: transparent; }
+.h-ul, .h-hl, .kh, .dp-tt .h-ul, .mine-h .kh { background: var(--pk); }
+.toc-l button small, .toc-l button:nth-child(n) small { background: var(--sk); }
+@media (max-width: 499px) { .toc-l { grid-template-columns: 1fr; } }
+.tray-g.g-chip { grid-template-columns: repeat(auto-fill, 112px); } .tray-g.g-chip button { aspect-ratio: 4 / 3; --pw: calc(92px / max(var(--tw), .2)); padding: 8px; } .tray-g.g-chip button > div { max-width: 100%; }
+
+.saved { transition: none !important; }
+
+.phg { align-items: start; }
+
+/* 표지 위아래에 붙인 흰 레이스 (구멍 사이로 표지가 비쳐요) */
+.cv-lace { position: absolute; left: 0; right: 0; height: 0; padding-top: 12.68%; background: url("assets/cover/lace.webp") 50% 0 / 33.333% auto repeat-x; filter: drop-shadow(0 1px 1px rgba(190, 110, 150, .28)); pointer-events: none; z-index: 1; }
+.cv-lace.t { top: 0; } .cv-lace.b { bottom: -2px; transform: scaleY(-1); }
+.cv-open { bottom: 14%; }
+.ent-ph .x { background: rgba(87, 87, 87, .82); color: #fff; width: 18px; height: 18px; font: 400 11px/17px var(--f-px); }
+@media (max-width: 499px) { .toc-l { padding-bottom: calc(var(--u) * 5); } }
+
+/* 가장자리에 손을 대면 귀퉁이가 살짝 들려요 (한 번, 0.12초) */
+.curl { width: calc(var(--u) * 5); height: calc(var(--u) * 5); animation: curlTap .12s ease-out both; }
+@keyframes curlTap { from { transform: scale(.2); opacity: .4; } to { transform: scale(1); opacity: 1; } } .curl.r { transform-origin: 100% 100%; } .curl.l { transform-origin: 0 100%; }
+#stage { cursor: default; touch-action: manipulation; }
