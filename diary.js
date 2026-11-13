@@ -188,11 +188,13 @@
   // ── 쪽 ──
   let P = [], pos = 0, busy = false, EDIT = null, TWO = false, PHONE = false;
   const book = $('#book'), slotL = $('#slotL'), slotR = $('#slotR'), bar = $('#bar'), tray = $('#tray'), tool = $('#tool'), tabs = $('#tabs');
-  const pkey = (p) => (p.t === 'day' ? 'd:' + p.d : p.w ? `${p.w.mon}:${p.t}` : p.t);
+  const pkey = (p) => (p.t === 'day' ? 'd:' + p.d : p.w ? `${p.w.mon}:${p.t}` : p.ym ? `${p.t}:${p.ym}` : p.t);
   function buildPages() {
     const key = P[pos] && pkey(P[pos]);
-    P = [{ t: 'cover' }, { t: 'fly' }, { t: 'toc' }];
-    for (const w of weeks()) { P.push({ t: 'wl', w }); for (const r of w.days) P.push({ t: 'day', w, d: r.date }); }   // 주마다 8쪽이라 「한 주 보기」는 늘 왼쪽 쪽
+    P = [{ t: 'cover' }, { t: 'ins' }, { t: 'fly' }, { t: 'toc' }, { t: 'mi' }];   // 표지 · 표지 안쪽 면 · 첫 장(ID 카드) · 목차 · 달 찾기. 가로에서는 [안쪽 면+첫 장] [목차+달 찾기] 가 한 펼침
+    let pm = '';
+    for (const w of weeks()) { const ym = ymOf(w.mon); if (ym !== pm) { pm = ym; P.push({ t: 'mo', ym }, { t: 'mo2', ym }); }   // 달이 바뀌면 간지 두 쪽 (왼쪽 색 띠 · 오른쪽 달력). 두 쪽이라 펼침 짝이 그대로예요
+      P.push({ t: 'wl', w }); for (const r of w.days) P.push({ t: 'day', w, d: r.date }); }   // 주마다 8쪽이라 「한 주 보기」는 늘 왼쪽 쪽
     P.push({ t: 'dall' }, { t: 'wall' }, { t: 'photos' }, { t: 'about' });
     if (key) { const i = P.findIndex((p) => pkey(p) === key); if (i >= 0) pos = i; }
   }
@@ -201,13 +203,15 @@
   const dLabel = (k) => { const D = dt(k); return `${D.getMonth() + 1}월 ${D.getDate()}일 ${KWD[D.getDay()]}요일`; };
   const idxOf = (mon, t) => P.findIndex((p) => p.w && p.w.mon === mon && p.t === t);
   const idxT = (t) => P.findIndex((p) => p.t === t);
+  const idxM = (ym) => P.findIndex((p) => p.t === 'mo' && p.ym === ym);
+  const ymOf = (mon) => { const th = dt(addD(mon, 3)); return `${th.getFullYear()}-${pad(th.getMonth() + 1)}`; };
   const thu = (m) => dt(addD(m, 3));
   const wkLabel = (m) => { const th = thu(m); return `${th.getMonth() + 1}월 ${['첫', '둘', '셋', '넷', '다섯'][Math.ceil(th.getDate() / 7) - 1]}째 주`; };
   const wkRange = (m) => { const a = dt(m), b = dt(addD(m, 6)); return `${a.getMonth() + 1}.${a.getDate()} ~ ${b.getMonth() + 1}.${b.getDate()}`; };
   const curMon = () => monday(TODAY());
-  const plabel = (p) => ({ cover: '', fly: '면지', toc: '목차', dall: '지난 일기 한눈에 보기', wall: '적어 둔 고민 한눈에 보기', photos: '붙인 사진 한눈에 보기', about: '설정' }[p.t] ?? (p.t === 'day' ? dLabel(p.d) : `${wkLabel(p.w.mon)} · 한 주 보기`));
+  const plabel = (p) => ({ cover: '', ins: '', fly: '내 다이어리', mi: '달 찾기', toc: '목차', dall: '지난 일기 한눈에 보기', wall: '적어 둔 고민 한눈에 보기', photos: '붙인 사진 한눈에 보기', about: '설정' }[p.t] ?? (p.ym ? (p.t === 'mo' ? `${+p.ym.slice(5)}월` : `${+p.ym.slice(5)}월 달력`) : p.t === 'day' ? dLabel(p.d) : `${wkLabel(p.w.mon)} · 한 주 보기`));
   const sp = (i) => Math.ceil(i / 2);
-  const view = (i) => (TWO ? { L: sp(i) * 2 - 1 >= 1 ? sp(i) * 2 - 1 : -1, R: sp(i) * 2 < P.length ? sp(i) * 2 : -1 } : { L: -1, R: i });
+  const view = (i) => (TWO ? { L: sp(i) * 2 - 1 >= 1 ? sp(i) * 2 - 1 : -1, R: sp(i) * 2 < P.length ? sp(i) * 2 : -1 } : { L: -1, R: P[i] && P[i].t === 'ins' ? i + 1 : i });   // 세로 한 쪽에서는 표지 안쪽 면을 건너뛰어요
   // 같은 날짜에 같은 내용으로 두 번 들어간 글은 한 번만 보여요 (가장 나중에 고친 것). 고치거나 지울 때 숨어 있던 쌍둥이도 함께 정리해요
   const entKey = (e) => [e.date, e.kind === 'worry' ? 'w' : 'd', String(e.text || '').trim(), entPh(e).map((x) => x.id).join(',')].join('\u0001');
   function entries() { const m = new Map(); for (const e of Object.values(DOC.entries)) { const k = entKey(e), o = m.get(k); if (!o || (EDIT && EDIT.id === e.id) || (!(EDIT && EDIT.id === o.id) && (e.at || 0) > (o.at || 0))) m.set(k, e); } return [...m.values()]; }
@@ -223,14 +227,87 @@
     return `<div class="cv">
       ${!AUTH ? `<form class="cv-code" id="code-f"><p>주인만 열 수 있어요. 내 코드를 적어 주세요</p><input id="code-in" inputmode="text" autocomplete="off" autocapitalize="off" maxlength="24" aria-label="내 코드"><button type="submit">열기</button><p class="err" id="code-err"></p></form>` : '<div class="cv-open">TAP TO OPEN</div>'}</div>`;
   }
+  // ── 첫 장 (W2): 가로 ID 카드를 시계 방향으로 90도 돌려 한 쪽 가득. 카드 바탕은 그림(assets/fly/idcard_*.webp), 글자·입력 칸·사진은 그 위에 % 자리로 얹어요 ──
+  const FACE = '<svg class="idc-face" viewBox="0 0 60 78" aria-hidden="true"><path class="fa" d="M30 18.5c11.8-.4 20.6 8 20.3 18.8-.3 10.6-8.8 18.3-20.5 18.2C18.3 55.4 9.8 47.7 9.700 37.1 9.600 26.600 18.4 18.9 30 18.5Z"/><path class="fl" d="M27.5 18.7c-.8-3.6.4-6.4 3.2-7.8M30.7 18.5c1.4-2.8 3.6-4.2 6.600-4"/><circle class="fe" cx="22.3" cy="37.8" r="1.9"/><circle class="fe" cx="37.9" cy="37.600" r="1.9"/><ellipse class="fb" cx="17.3" cy="43.8" rx="3.5" ry="2.1"/><ellipse class="fb" cx="42.9" cy="43.600" rx="3.5" ry="2.1"/><path class="fl" d="M27.600 44.600c1.600 1.5 3.5 1.5 5 0"/><path class="fl" d="M22 62.5c5.4 2.3 10.8 2.3 16.2 0"/></svg>'.replace(/(\.\d)00/g, '$1');
+  const idTone = () => (DOC.fly.tone === 'sk' ? 'sk' : 'pk');
   function flyHtml() {
-    const f = DOC.fly, last = LS.get('jd:last', null), li = last ? P.findIndex((p) => pkey(p) === last) : -1, ti = idxD(TODAY()), wi = idxOf(curMon(), 'wl'), cont = li > 2 && sp(li) !== sp(ti) && sp(li) !== sp(wi);
-    return `<div class="fly"><div class="ttl w">This diary<br>belongs to</div>
-      <label class="fld w" style="--i:2"><span class="cap">name</span><input class="hin" data-fly="name" value="${esc(f.name || '')}" placeholder="이름" maxlength="20"></label>
-      <label class="fld w" style="--i:3"><span class="cap">since</span><input class="hin" data-fly="since" value="${esc(f.since || '')}" placeholder="시작한 날" maxlength="20"></label>
-      <label class="fld w" style="--i:4"><span class="cap">a promise to myself</span><input class="hin" data-fly="vow" value="${esc(f.vow || '')}" placeholder="한 줄 다짐" maxlength="40"></label>
-      <div class="fly-go w" style="--i:6">${cont ? `<button type="button" class="lbtn dark" data-jump="${li}">이어서 보기 · ${esc(plabel(P[li]))}</button>` : ''}<button type="button" class="lbtn ${cont ? '' : 'dark'}" data-jump="${ti}">오늘 페이지 펴기</button><button type="button" class="lbtn" data-jump="${wi}">이번 주 보기</button></div></div>`;
+    const f = DOC.fly, tone = idTone();
+    const row = (lab, key, max, al, cls) => `<label class="idr ${cls || ''}">${lab ? `<span>${lab}</span>` : ''}<input class="idi" data-fly="${key}" value="${esc(f[key] || '')}" maxlength="${max}" aria-label="${al || lab}" readonly tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false"></label>`;
+    return `<div class="fly"><div class="idc t-${tone}" role="button" tabindex="0" aria-label="ID 카드 쓰기. 누르면 카드가 바로 서요">
+      <div class="idc-pi" data-idph>${f.photo ? `<img data-ph="${esc(f.photo)}" alt="내 사진" draggable="false">` : FACE}</div>
+      <img class="idc-bg" src="assets/fly/idcard_${tone}.webp" alt="" draggable="false">
+      <div class="idc-f"><div class="idc-t"><span>ID CARD</span></div>
+        ${row('Name :', 'name', 20)}${row('Birth Day :', 'birth', 20)}${row('Group :', 'group', 24)}${row('Info :', 'vow', 40)}${row('', 'info', 40, 'Info 둘째 줄', 'in2')}
+        ${row('since', 'since', 20, '시작한 날', 'ids')}</div>
+</div><span class="idc-tip">카드를 누르면 바로 서요</span></div>`;
   }
+  // 카드를 누르면 바로 서서(회전 0) 화면 가운데로 커져요. 바깥이나 「다 썼어요」를 누르면 다시 돌아가 제자리로
+  let IDED = null;
+  function bindId(card) {
+    card.onclick = (e) => {
+      if (IDED) { e.stopPropagation(); if (e.target.closest('[data-idph]')) idPhoto(card); return; }
+      const pg = card.closest('.page'), r = pg && pg.getBoundingClientRect(), x = r ? (e.clientX - r.left) / r.width : 0.5; if (x > 5 / 6 || (!TWO && x < 1 / 6)) return;   // 쪽 가장자리는 넘기는 자리로 남겨 둬요
+      e.stopPropagation(); if (busy || dragging || SEL) return; idOpen(card);
+    };
+    card.onkeydown = (e) => { if (!IDED && (e.key === 'Enter' || e.key === ' ') && e.target === card) { e.preventDefault(); idOpen(card); } };
+  }
+  const idFrom = (host, card) => { const r = host.getBoundingClientRect(); return `translate(${(r.left + r.width / 2 - card.offsetWidth / 2).toFixed(1)}px,${(r.top + r.height / 2 - card.offsetHeight / 2).toFixed(1)}px) rotate(90deg)`; };
+  function idOpen(card) {
+    const host = card.parentElement, ov = document.createElement('div'), cw = card.offsetWidth, ch = card.offsetHeight; ov.id = 'idov';
+    ov.innerHTML = `<div class="idov-bar"><span class="idov-tone" role="group" aria-label="카드 색">${[['pk', '분홍'], ['sk', '하늘']].map(([k, n]) => `<button type="button" data-tone="${k}" class="${idTone() === k ? 'on' : ''}" aria-label="${n} 카드"></button>`).join('')}</span><button type="button" class="idov-x" data-phx hidden>사진 빼기</button><button type="button" class="idov-ok">다 썼어요</button></div>`;
+    $('#app').appendChild(ov); card.classList.add('seen'); card.style.transform = idFrom(host, card); card.classList.add('ed'); ov.insertBefore(card, ov.firstChild); document.body.classList.add('ided');
+    const s = Math.min((innerWidth - 24) / cw, (innerHeight - 120) / ch, 1.3), to = `translate(${((innerWidth - cw) / 2).toFixed(1)}px,${Math.max(8 - ch * (1 - s) / 2, (innerHeight - 70) * 0.46 - ch / 2).toFixed(1)}px) rotate(0deg) scale(${s.toFixed(3)})`;
+    card.offsetWidth; card.style.transform = to; ov.classList.add('on');
+    $$('.idi', card).forEach((i) => { i.readOnly = false; i.tabIndex = 0; });
+    const px = $('[data-phx]', ov); px.hidden = !DOC.fly.photo;
+    px.onclick = () => { delete DOC.fly.photo; DOC.fly.at = Date.now(); save(); $('.idc-pi', card).innerHTML = FACE; px.hidden = true; };
+    $$('[data-tone]', ov).forEach((b) => (b.onclick = () => { const k = b.dataset.tone; DOC.fly.tone = k; DOC.fly.at = Date.now(); save(); card.classList.toggle('t-sk', k === 'sk'); card.classList.toggle('t-pk', k !== 'sk'); $('.idc-bg', card).src = `assets/fly/idcard_${idTone()}.webp`; $$('[data-tone]', ov).forEach((x) => x.classList.toggle('on', x === b)); }));
+    $('.idov-ok', ov).onclick = idClose; ov.onclick = (e) => { if (e.target === ov) idClose(); };
+    IDED = { card, host, ov };
+  }
+  function idClose() {
+    const E = IDED; if (!E || E.out) return; E.out = true; const { card, host, ov } = E; if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    $$('.idi', card).forEach((i) => { i.readOnly = true; i.tabIndex = -1; });
+    const live = host.isConnected; ov.classList.remove('on'); if (live) card.style.transform = idFrom(host, card); else card.style.opacity = 0;
+    setTimeout(() => { card.classList.remove('ed'); card.style.transform = ''; if (live) host.appendChild(card); ov.remove(); document.body.classList.remove('ided'); IDED = null; if (!live) refresh(); }, 440);
+  }
+  function idPhoto(card) { pickPhoto((id) => { DOC.fly.photo = id; DOC.fly.at = Date.now(); save(); const pi = $('.idc-pi', card); pi.innerHTML = `<img data-ph="${esc(id)}" alt="내 사진" draggable="false">`; fillPhotos(pi); const px = IDED && $('[data-phx]', IDED.ov); if (px) px.hidden = false; }); }
+  addEventListener('keydown', (e) => { if (IDED && e.key === 'Escape') idClose(); });
+  addEventListener('resize', () => { if (IDED && !/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) idClose(); });
+
+  // 달 찾기 (목차 옆 쪽) · 달 간지 (왼쪽 색 띠 + 달 이름, 오른쪽 달력)
+  function miHtml() {
+    const y = new Date().getFullYear(), last = LS.get('jd:last', null), li = last ? P.findIndex((p) => pkey(p) === last) : -1, ti = idxD(TODAY()), wi = idxOf(curMon(), 'wl'), cont = li > 4 && sp(li) !== sp(ti) && sp(li) !== sp(wi);
+    return `<div class="mi"><div class="mi-h w"><b>${y}</b><span>monthly index</span></div><p class="mi-p w" style="--i:1">달을 누르면 그 달 첫 쪽이 펴져요</p>
+      <div class="mi-g">${MON.map((m, i) => { const t = idxM(`${y}-${pad(i + 1)}`); return `<button type="button" class="mi-t ${i % 2 ? 'b' : 'a'} w" style="--i:${i + 2}" ${t < 0 ? 'disabled' : `data-jump="${t}"`} aria-label="${i + 1}월"><b>${i + 1}</b><small>${m.slice(0, 3).toLowerCase()}</small></button>`; }).join('')}</div>
+      <div class="fly-go w" style="--i:15">${cont ? `<button type="button" class="lbtn dark" data-jump="${li}">이어서 보기 · ${esc(plabel(P[li]))}</button>` : ''}<button type="button" class="lbtn ${cont ? '' : 'dark'}" data-jump="${ti}">오늘 페이지 펴기</button><button type="button" class="lbtn" data-jump="${wi}">이번 주 보기</button></div></div>`;
+  }
+  function moHtml(p) {
+    const y = +p.ym.slice(0, 4), m = +p.ym.slice(5) - 1;
+    return `<div class="mo ${m % 2 ? 'b' : 'a'}"><div class="mo-band"><i></i></div><div class="mo-n w">${m + 1}</div><div class="mo-e w" style="--i:2"><span>${MON[m].toLowerCase()}</span></div><div class="mo-y w" style="--i:4">${y} · monthly</div></div>`;
+  }
+  function mo2Html(p) {
+    const y = +p.ym.slice(0, 4), m = +p.ym.slice(5) - 1, n = new Date(y, m + 1, 0).getDate(), off = (new Date(y, m, 1).getDay() + 6) % 7, today = TODAY();
+    let h = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((c) => `<b>${c}</b>`).join(''); for (let i = 0; i < off; i++) h += '<i></i>';
+    for (let d = 1; d <= n; d++) { const k = `${p.ym}-${pad(d)}`, i = idxD(k), cls = `${hasRec(DAYS.d[k]) || dayEntries(k).length ? ' s' : ''}${k === today ? ' t' : ''}`; h += i >= 0 ? `<button type="button" class="mc-d${cls}" data-jump="${i}" aria-label="${esc(dLabel(k))}">${d}</button>` : `<i class="mc-d off">${d}</i>`; }
+    const W = weeks().filter((w) => ymOf(w.mon) === p.ym);
+    return `<div class="mo2 ${m % 2 ? 'b' : 'a'}"><div class="mo2-h w"><b>${m + 1}</b><span>${MON[m].toLowerCase()} ${y}</span></div><div class="mc w" style="--i:2">${h}</div><p class="mi-p w" style="--i:4">날짜를 누르면 그날 쪽이 펴져요</p>
+      <div class="mo2-w">${W.map((w, i) => `<button type="button" class="w${w.mon === curMon() ? ' cur' : ''}" style="--i:${i + 5}" data-wk="${w.mon}"><span>${esc(wkLabel(w.mon))}</span><small>${wkRange(w.mon)}</small></button>`).join('')}</div></div>`;
+  }
+
+  // 책갈피 (W2): 오늘 쪽 자리에 꽂혀 있어요. 누르면 오늘 쪽으로. 무늬는 설정에서 골라요
+  const BMS = [['pk', '분홍 줄무늬'], ['sk', '하늘 줄무늬'], ['dot', '물방울']];
+  let BM = LS.get('jd:bm', null) || DOC.bm || 'pk'; if (!BMS.some((b) => b[0] === BM)) BM = 'pk';
+  const bm = document.createElement('button'); bm.type = 'button'; bm.id = 'bm'; bm.className = 'hide'; bm.setAttribute('aria-label', '책갈피. 오늘 페이지 펴기');
+  bm.innerHTML = `<i><img src="assets/fly/bm_${BM}.webp" alt="" draggable="false"></i>`;
+  book.appendChild(bm);
+  bm.onclick = (e) => { e.stopPropagation(); const t = idxD(TODAY()); bm.classList.remove('tok'); bm.offsetWidth; bm.classList.add('tok'); if (t >= 0 && !busy) go(t, true); };
+  function bmSync() {
+    const ti = idxD(TODAY()), v = view(pos), on = ti >= 0 && (v.L === ti || v.R === ti), left = TWO && (on ? v.L === ti : ti < Math.max(v.L, v.R));
+    bm.className = `${pos === 0 || ti < 0 ? 'hide' : ''}${on ? ' on' : ''}${left ? ' l' : ''}${bm.classList.contains('tok') ? ' tok' : ''}`;
+  }
+  function setBm(k) { if (!BMS.some((b) => b[0] === k)) return; BM = k; LS.set('jd:bm', k); DOC.bm = k; save(); $('img', bm).src = `assets/fly/bm_${k}.webp`; $$('[data-bm]').forEach((b) => b.classList.toggle('on', b.dataset.bm === k)); bm.classList.remove('tok'); bm.offsetWidth; bm.classList.add('tok'); }
+
   function tocHtml() {
     const W = weeks(), have = new Set(W.map((w) => w.mon)), mins = {}; for (const w of W) for (const d of w.days) if (hasRec(d)) mins[d.date] = 1;
     const y = new Date().getFullYear(), today = TODAY(), cm = curMon(); let h = '';
@@ -331,6 +408,7 @@
     const ios = /iPhone|iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), alone = matchMedia('(display-mode: standalone)').matches || navigator.standalone, perm = 'Notification' in window ? Notification.permission : 'no';
     return `${lstHead('설정', '', '글씨체, 저장, 알림을 여기서 바꿔요.')}
       <div class="set"><h3>내 글씨체</h3><p>내가 쓴 글에만 쓰여요.</p><div class="fonts">${FONTS.map((f) => `<button type="button" data-font="${f.id}" class="${f.id === FONT ? 'on' : ''}"><span class="rb"></span><small>${f.n}</small><span class="pv" style="font-family:'${f.fam}',cursive">오늘도 한 장, 천천히 써 내려간다 123</span></button>`).join('')}</div></div>
+      <div class="set"><h3>책갈피</h3><p>오늘 쪽에 꽂아 두는 책갈피예요. 무늬를 골라요.</p><div class="bmset">${BMS.map(([k, n]) => `<button type="button" data-bm="${k}" class="${k === BM ? 'on' : ''}" aria-label="${n}"><img src="assets/fly/bm_${k}.webp" alt="" draggable="false"><small>${n}</small></button>`).join('')}</div></div>
       <div class="set"><h3>저장</h3><p id="srv-state">${srvText()}</p><p>글은 내 코드로 잠가서 저장해요. 고민은 나만 볼 수 있어요.</p></div>
       <div class="set"><h3>알림</h3><p>${perm === 'granted' && PUSH ? '알림이 켜져 있어요. 밤에 한 줄 쓰자고 조용히 알려 줘요.' : perm === 'no' ? (ios && !alone ? '홈 화면에 추가한 앱에서 알림을 켤 수 있어요.' : '이 브라우저는 알림을 받을 수 없어요.') : perm === 'denied' ? '알림이 꺼져 있어요. 설정 앱에서 켤 수 있어요.' : '밤에 한 줄 쓰자고, 일요일엔 한 주가 다 채워졌다고 알려 줘요.'}</p>${perm === 'default' || (perm === 'granted' && !PUSH) ? '<button type="button" class="lbtn dark" id="push-on">알림 켜기</button>' : ''}</div>
       ${alone ? '' : `<div class="set"><h3>앱으로 쓰기</h3><p>${ios ? '사파리 공유 단추를 누르고 「홈 화면에 추가」를 고르면 앱이 돼요.' : '브라우저 메뉴에서 「홈 화면에 추가」 또는 「앱 설치」를 고르면 앱이 돼요.'}</p></div>`}
@@ -343,7 +421,6 @@
     const h = seed(pkey(p)), pick = (a, n) => a[(h >>> n) % a.length];
     // 미리 붙어 나오는 것은 사진과 영문 인쇄 문구만, 적게. 우리가 지은 한글 쪽지는 붙이지 않아요 (쪽지는 서랍에서 정윤이 직접 써요)
     // 한 주 보기 · 날짜 페이지에는 미리 붙여 두는 것이 없어요 (기록 글씨를 가리지 않게). 스티커는 정윤이 직접 붙여요
-    if (p.t === 'fly') return [{ id: 'd0', k: 'f_peony', x: 0.76, y: 0.2, r: 8 }];
     return [];
   }
   const stkOld = (p) => { const o = p.t === 'day' && p.d === p.w.mon && DOC.stk[`${p.w.mon}:wr`]; const L = o ? (o.list || []).filter((s) => !/^d\d$/.test(s.id)) : []; return L.length ? L : null; };
@@ -353,8 +430,8 @@
   const stkHtml = (s, cls) => { const inner = stkInner(s); return inner ? `<div class="stk ${cls || ''}" data-sid="${esc(s.id)}" style="--x:${s.x};--y:${s.y};--w:${stkW(s)};--r:${s.r || 0}deg;--s:${s.s || 1}">${inner}</div>` : ''; };
   function stkMut(pi, f) { const p = P[pi], k = pkey(p); if (!DOC.stk[k]) DOC.stk[k] = { at: 0, list: JSON.parse(JSON.stringify(stkList(p))) }; const r = f(DOC.stk[k].list); DOC.stk[k].at = Date.now(); save(); return r; }
 
-  const BODY = { fly: flyHtml, toc: tocHtml, dall: () => listHtml('day'), wall: () => listHtml('worry'), photos: photosHtml, about: aboutHtml };
-  function pageBody(p) { return p.t === 'cover' ? coverHtml() : `<div class="in"><div class="sheet">${p.w ? (p.t === 'wl' ? wlHtml(p.w) : dayHtml(p)) : BODY[p.t]()}${stkList(p).map((s) => stkHtml(s)).join('')}</div></div><div class="pglab">${esc(plabel(p))}</div>`; }
+  const BODY = { ins: () => '<div class="ins-in"></div>', mi: miHtml, mo: moHtml, mo2: mo2Html, fly: flyHtml, toc: tocHtml, dall: () => listHtml('day'), wall: () => listHtml('worry'), photos: photosHtml, about: aboutHtml };
+  function pageBody(p) { return p.t === 'cover' ? coverHtml() : `<div class="in"><div class="sheet">${p.w ? (p.t === 'wl' ? wlHtml(p.w) : dayHtml(p)) : BODY[p.t](p)}${stkList(p).map((s) => stkHtml(s)).join('')}</div></div><div class="pglab">${esc(plabel(p))}</div>`; }
   function mk(i, side) { const p = P[i], el = document.createElement('div'); el.className = `page ${p.t === 'cover' ? 'cover' : p.t} ${side === 'L' ? 'sl' : 'sr'}`; el.dataset.pi = i; el.innerHTML = pageBody(p); fillPhotos(el); bindPage(el, i); return el; }
   const blank = (side) => { const el = document.createElement('div'); el.className = `page blank ${side === 'L' ? 'sl' : 'sr'}`; return el; };
   function mount(keep) {
@@ -377,19 +454,19 @@
   // 지금 어디인지: 탭 · 두께 · 위쪽 글
   function buildTabs() {
     const W = weeks(), y = new Date().getFullYear(), ms = new Set(W.filter((w) => thu(w.mon).getFullYear() === y).map((w) => thu(w.mon).getMonth()));
-    tabs.innerHTML = [['toc', '목차'], ['today', '오늘'], ['now', '주간'], ['day', '일기'], ['worry', '고민'], ['photo', '사진'], ['set', '설정']].map(([k, n]) => `<button type="button" class="cat" data-tab="${k}" aria-label="${{ toc: '목차', today: '오늘 페이지', now: '이번 주 보기', day: '지난 일기 한눈에 보기', worry: '적어 둔 고민 한눈에 보기', photo: '붙인 사진', set: '설정' }[k]}">${n}</button>`).join('') + `<span class="gap"></span><button type="button" class="yr" tabindex="-1">${y}</button>` + MON.map((m, i) => `<button type="button" class="${ms.has(i) ? '' : 'off'}" data-tab="m${i}" ${ms.has(i) ? '' : 'disabled'}>${m.slice(0, 3)}</button>`).join('');
-    $$('[data-tab]', tabs).forEach((b) => (b.onclick = () => { const k = b.dataset.tab; let t = -1; if (k === 'toc') t = idxT(TWO ? 'fly' : 'toc'); else if (k === 'today') t = idxD(TODAY()); else if (k === 'now') t = idxOf(curMon(), 'wl'); else if (k === 'day') t = idxT('dall'); else if (k === 'worry') t = idxT('wall'); else if (k === 'photo') t = idxT('photos'); else if (k === 'set') t = idxT('about'); else { const m = +k.slice(1), w = weeks().find((x) => thu(x.mon).getMonth() === m && thu(x.mon).getFullYear() === new Date().getFullYear()); if (w) t = idxOf(w.mon, 'wl'); } if (t >= 0) go(t, true); }));
+    let ci = 0; tabs.innerHTML = [['toc', '목차'], ['today', '오늘'], ['now', '주간'], ['day', '일기'], ['worry', '고민'], ['photo', '사진'], ['set', '설정']].map(([k, n]) => `<button type="button" class="cat c${ci++ % 3}" data-tab="${k}" aria-label="${{ toc: '목차', today: '오늘 페이지', now: '이번 주 보기', day: '지난 일기 한눈에 보기', worry: '적어 둔 고민 한눈에 보기', photo: '붙인 사진', set: '설정' }[k]}">${n}</button>`).join('') + `<span class="gap"></span><button type="button" class="yr" tabindex="-1">${y}</button>` + MON.map((m, i) => `<button type="button" class="mt ${i % 2 ? 'b' : 'a'}${ms.has(i) ? '' : ' off'}" data-tab="m${i}" aria-label="${i + 1}월" ${ms.has(i) ? '' : 'disabled'}><b>${i + 1}</b><small>${m.slice(0, 3).toLowerCase()}</small></button>`).join('');
+    $$('[data-tab]', tabs).forEach((b) => (b.onclick = () => { const k = b.dataset.tab; let t = -1; if (k === 'toc') t = idxT('toc'); else if (k === 'today') t = idxD(TODAY()); else if (k === 'now') t = idxOf(curMon(), 'wl'); else if (k === 'day') t = idxT('dall'); else if (k === 'worry') t = idxT('wall'); else if (k === 'photo') t = idxT('photos'); else if (k === 'set') t = idxT('about'); else t = idxM(`${new Date().getFullYear()}-${pad(+k.slice(1) + 1)}`); /* 달 탭은 그 달 간지로 */ if (t >= 0) go(t, true); }));
   }
   function sync() {
     const closed = pos === 0; document.body.classList.toggle('closed', closed); bar.classList.toggle('hide', closed);
     const v = view(pos), shown = [v.L, v.R].filter((i) => i >= 0).map((i) => P[i]), on = new Set();
-    for (const p of shown) { if (p.t === 'fly' || p.t === 'toc') on.add('toc'); if (p.t === 'dall') on.add('day'); if (p.t === 'wall') on.add('worry'); if (p.t === 'photos') on.add('photo'); if (p.t === 'about') on.add('set'); if (p.w) { on.add('m' + thu(p.w.mon).getMonth()); if (p.t === 'wl' && p.w.mon === curMon()) on.add('now'); if (p.t === 'day' && p.d === TODAY()) on.add('today'); } }
+    for (const p of shown) { if (p.t === 'mi' || p.t === 'toc') on.add('toc'); if (p.ym) on.add('m' + (+p.ym.slice(5) - 1)); if (p.t === 'dall') on.add('day'); if (p.t === 'wall') on.add('worry'); if (p.t === 'photos') on.add('photo'); if (p.t === 'about') on.add('set'); if (p.w) { on.add('m' + thu(p.w.mon).getMonth()); if (p.t === 'wl' && p.w.mon === curMon()) on.add('now'); if (p.t === 'day' && p.d === TODAY()) on.add('today'); } }
     $$('[data-tab]', tabs).forEach((b) => b.classList.toggle('on', on.has(b.dataset.tab)));
     const pr = P.length > 1 ? pos / (P.length - 1) : 0; const tl = closed ? 0 : 2 + pr * 13, tr = 2 + (1 - pr) * 13, td = (closed || !TWO ? tr : Math.max(tl, tr)) * 0.5, stack = (t, dir) => { const a = [], n = Math.max(1, Math.round(t / 1.5)), put = (o, c) => { const y = (td * o / t).toFixed(2); a.push(`${(dir * o).toFixed(2)}px ${y}px 0 ${c}`, `0 ${y}px 0 ${c}`); }; for (let k = 1; k <= n; k++) { const o = t * k / n; put(o - 0.5, '#fdfcfa'); put(o, k === n ? '#d9d5cf' : '#e6e3de'); } return t ? a.join(', ') : 'none'; }; /* 얇은 종이가 많이 쌓인 옆면: 1px 종이 + 0.5px 가는 선을 여러 겹 */
     book.style.setProperty('--shl', stack(tl, -1)); book.style.setProperty('--shr', stack(tr, 1)); book.style.setProperty('--tr', tr.toFixed(1) + 'px');
     $('#here').textContent = closed ? '' : shown.map((p) => plabel(p) + (p.t === 'day' && p.d === TODAY() ? ' (오늘)' : p.t === 'wl' && p.w.mon === curMon() ? ' (이번 주)' : '')).filter(Boolean).join('   ·   ');
     $('#b-prev').disabled = pos <= 0; $('#b-next').disabled = TWO ? sp(pos) >= sp(P.length - 1) : pos >= P.length - 1;
-    const p = P[pos]; if (p && pos > 2) LS.set('jd:last', pkey(p));
+    const p = P[pos]; if (p && pos > 4) LS.set('jd:last', pkey(p)); bmSync();
   }
 
   // 넘기기. far = 인덱스 · 목차로 멀리 뛸 때만 여러 장이 촤라락
@@ -426,7 +503,7 @@
     pos = t; sync();
     setTimeout(() => { fin(); leaves.forEach((l) => l.remove()); busy = false; sync(); }, dur + (n - 1) * ST + 40);
   }
-  const step = (d) => { if (TWO) { const s = sp(pos) + d; if (s < 0 || s > sp(P.length - 1)) return; go(s === 0 ? 0 : s * 2 - 1); } else go(pos + d); };
+  const step = (d) => { if (TWO) { const s = sp(pos) + d; if (s < 0 || s > sp(P.length - 1)) return; go(s === 0 ? 0 : s * 2 - 1); } else { let t = pos + d; if (d > 0 && P[pos] && P[pos].t === 'ins') t++; if (P[t] && P[t].t === 'ins') t += d; go(t); } };
 
   // ── 묶기 ──
   function bindPage(el, pi) {
@@ -434,7 +511,7 @@
     if (p.t === 'cover') {
       const f = $('#code-f', el);
       if (f) { f.onsubmit = (e) => { e.preventDefault(); login($('#code-in', el).value); }; }
-      else el.onclick = () => go(1);
+      else el.onclick = () => go(TWO ? 1 : 2);
       return;
     }
     $$('[data-jump]', el).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const t = +b.dataset.jump; if (t >= 0) go(t, true); }));
@@ -445,6 +522,8 @@
     $$('[data-del]', el).forEach((b) => (b.onclick = () => askDel(b.closest('[data-ent]'))));
     $$('.cell[data-jump]', el).forEach((c) => (c.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } }));
     $$('[data-font]', el).forEach((b) => (b.onclick = () => setFont(b.dataset.font)));
+    $$('[data-bm]', el).forEach((b) => (b.onclick = () => setBm(b.dataset.bm)));
+    const ic = $('.idc', el); if (ic) bindId(ic);
     const ta = $('#ent-ta', el);
     if (ta) {
       const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }; requestAnimationFrame(fit);
@@ -572,7 +651,7 @@
     });
   }
   $('#b-stk').onclick = () => { if (!tray.classList.contains('hide') && $('.tray-g', tray)) return closeTray(); stkTray(); };
-  $('#b-toc').onclick = () => go(idxT(TWO ? 'fly' : 'toc'), true);
+  $('#b-toc').onclick = () => go(idxT('toc'), true);
   $('#b-write').onclick = () => { if (EDIT && $('#ent-ta')) return focusTa(); const T = dayEntries(TODAY()), hd = T.some((e) => !isW(e)), hw = T.some(isW); openTray(`<div class="tray-h"><b>오늘 페이지에 쓰기</b><button type="button" data-x>닫기</button></div><div class="tray-w"><button type="button" data-n="day" style="--i:0"><span>${hd ? '오늘 일기 이어 쓰기' : '오늘 일기 쓰기'}</span><small>있었던 일 · 기분</small></button><button type="button" data-n="worry" style="--i:1"><span>${hw ? '오늘 적은 고민 이어 쓰기' : '고민 적어 두기'}</span><small>나만 보기</small></button></div>`, (el) => { $('[data-x]', el).onclick = closeTray; $$('[data-n]', el).forEach((b) => (b.onclick = () => { closeTray(); newEntry(b.dataset.n); })); }); };
   $('#b-prev').onclick = () => step(-1);
   $('#b-next').onclick = () => step(1);
@@ -599,7 +678,7 @@
   const mine = (o) => o && o.who === CFG.owner && (o.role || 'student') === 'student' && o.code;
   async function login(w) {
     const err = $('#code-err'); if (err) err.textContent = '';
-    try { const o = await resolve(w); if (!mine(o)) { if (err) err.textContent = o ? '이 다이어리는 주인만 열 수 있어요' : '코드를 다시 확인해 주세요'; return false; } AUTH = { who: o.who, code: o.code }; LS.set('jd:auth', AUTH); KEYP = null; afterAuth(); mount(); setTimeout(() => go(1), 500); return true; }
+    try { const o = await resolve(w); if (!mine(o)) { if (err) err.textContent = o ? '이 다이어리는 주인만 열 수 있어요' : '코드를 다시 확인해 주세요'; return false; } AUTH = { who: o.who, code: o.code }; LS.set('jd:auth', AUTH); KEYP = null; afterAuth(); mount(); setTimeout(() => go(TWO ? 1 : 2), 500); return true; }
     catch (e) { if (err) err.textContent = '지금은 확인할 수 없어요. 조금 뒤에 다시 해 주세요'; return false; }
   }
   function afterAuth() { loadUniv(); pull(); }

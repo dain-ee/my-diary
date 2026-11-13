@@ -43,3 +43,17 @@
 | 파일 | 출처 |
 | -- | -- |
 | assets/ui/w1_lace.svg | 직접 그린 도트 레이스 무늬 (코드로 만듦) |
+
+## 첫 장 · 책갈피
+
+모두 GPT 이미지 생성 (2026-11-13). 원본은 `source/gen/`. 그림 안에 글자는 없고, 글자·입력 칸은 코드로 얹어요.
+
+| 파일 | 원본 | 가공 |
+| -- | -- | -- |
+| assets/fly/idcard_pk.webp | source/gen/w2_idcard_pink.png | 카드 바깥과 사진 칸을 투명하게 따냄 |
+| assets/fly/idcard_sk.webp | source/gen/w2_idcard_pink.png | 같은 그림에서 분홍과 하늘 색만 맞바꿈 |
+| assets/fly/pattern.webp | source/gen/w2_pattern.png | 줄여 씀 |
+| assets/fly/bm_pk.webp, bm_sk.webp, bm_dot.webp | source/gen/w2_bookmark.png | 녹색 배경을 지우고 색·무늬만 바꿈 |
+
+쓰지 않은 그림: `source/gen/w2_idcard_sky.png`.
+스티커 묶음 「낙서」「파스텔」의 그림은 모두 코드(SVG·CSS)로 직접 그렸어요.
