@@ -108,8 +108,8 @@
   //   fin.ans · eng.days.*.uans/uans2/wans · eng.g3ans · sci.days.*.ans · nx.a 의 답 시각(at) → 20분 안쪽끼리 묶은 「앱 문제」 칸
   //   pomo.days[날짜].man → 시각 없이 적은 하루 공부 시간. 잰 시간보다 많을 때만 그 차이를 더해요
   //   하루는 새벽 5시에 바뀌어요
-  const SUBJ_C = { 국어: '#f59f00', 수학: '#3182f6', 영어: '#8b5cf6', 과학: '#03b26c', 사회: '#e8590c', 숙제: '#0ca5b0', '학원 숙제': '#0ca5b0', 책: '#ae3ec9', 오답: '#f04452', 단어: '#d6336c', 내신: '#5c7cfa', 자유: '#868e96', 앱: '#b0b8c1' };
-  const FREE_C = ['#3182f6', '#03b26c', '#f59f00', '#8b5cf6', '#0ca5b0', '#e8590c', '#d6336c', '#5c7cfa', '#ae3ec9'];
+  const SUBJ_C = { 국어: '#ffd8a0', 수학: '#a9d3ff', 영어: '#d4c4ff', 과학: '#b3ebd0', 사회: '#ffc3aa', 숙제: '#a9e4e8', '학원 숙제': '#a9e4e8', 책: '#ecc2f6', 오답: '#ffb9c7', 단어: '#ffc4e3', 내신: '#bdc9ff', 자유: '#d6d8dc', 앱: '#e4e6ea' };
+  const FREE_C = ['#a9d3ff', '#b3ebd0', '#ffd8a0', '#d4c4ff', '#a9e4e8', '#ffc3aa', '#ffc4e3', '#bdc9ff', '#ecc2f6'];
   const colorOf = (k) => SUBJ_C[k] || FREE_C[seed(String(k)) % FREE_C.length];
   const ld = (t) => ymd(new Date(t - 5 * 3600000));
   // 과목을 고르지 않고 잰 것(자유)은 제목 앞머리(책 이름)로 색을 나눠요
@@ -220,8 +220,7 @@
   const CLIP = (STK.ransom.h.match(/<svg class="bclip"[\s\S]*?<\/svg>/) || [''])[0];
   setTimeout(() => document.body.classList.remove('cv-in'), 3200);   // 표지가 처음 나타날 때만 움직여요
   function coverHtml() {
-    return `<div class="cv"><div class="cv-lace"></div><i class="cv-st t"></i><i class="cv-st r"></i><i class="cv-st b"></i><i class="cv-st l"></i>
-      <div class="cv-ttl">Diary</div>
+    return `<div class="cv">
       ${!AUTH ? `<form class="cv-code" id="code-f"><p>주인만 열 수 있어요. 내 코드를 적어 주세요</p><input id="code-in" inputmode="text" autocomplete="off" autocapitalize="off" maxlength="24" aria-label="내 코드"><button type="submit">열기</button><p class="err" id="code-err"></p></form>` : '<div class="cv-open">TAP TO OPEN</div>'}</div>`;
   }
   function flyHtml() {
@@ -386,7 +385,7 @@
     const v = view(pos), shown = [v.L, v.R].filter((i) => i >= 0).map((i) => P[i]), on = new Set();
     for (const p of shown) { if (p.t === 'fly' || p.t === 'toc') on.add('toc'); if (p.t === 'dall') on.add('day'); if (p.t === 'wall') on.add('worry'); if (p.t === 'photos') on.add('photo'); if (p.t === 'about') on.add('set'); if (p.w) { on.add('m' + thu(p.w.mon).getMonth()); if (p.t === 'wl' && p.w.mon === curMon()) on.add('now'); if (p.t === 'day' && p.d === TODAY()) on.add('today'); } }
     $$('[data-tab]', tabs).forEach((b) => b.classList.toggle('on', on.has(b.dataset.tab)));
-    const pr = P.length > 1 ? pos / (P.length - 1) : 0; const tl = closed ? 0 : 2 + pr * 13, tr = 2 + (1 - pr) * 13, td = (closed || !TWO ? tr : Math.max(tl, tr)) * 0.5, stack = (t, dir) => { const a = [], n = 8; for (let k = 1; k <= n; k++) { const o = t * k / n, y = (td * k / n).toFixed(2); const c = k % 2 ? '#fdfbf7' : '#d2cbc0'; a.push(`${(dir * o).toFixed(2)}px ${y}px 0 ${c}`, `0 ${y}px 0 ${c}`); } return a.join(', '); };
+    const pr = P.length > 1 ? pos / (P.length - 1) : 0; const tl = closed ? 0 : 2 + pr * 13, tr = 2 + (1 - pr) * 13, td = (closed || !TWO ? tr : Math.max(tl, tr)) * 0.5, stack = (t, dir) => { const a = [], n = Math.max(1, Math.round(t / 1.5)), put = (o, c) => { const y = (td * o / t).toFixed(2); a.push(`${(dir * o).toFixed(2)}px ${y}px 0 ${c}`, `0 ${y}px 0 ${c}`); }; for (let k = 1; k <= n; k++) { const o = t * k / n; put(o - 0.5, '#fdfcfa'); put(o, k === n ? '#d9d5cf' : '#e6e3de'); } return t ? a.join(', ') : 'none'; }; /* 얇은 종이가 많이 쌓인 옆면: 1px 종이 + 0.5px 가는 선을 여러 겹 */
     book.style.setProperty('--shl', stack(tl, -1)); book.style.setProperty('--shr', stack(tr, 1)); book.style.setProperty('--tr', tr.toFixed(1) + 'px');
     $('#here').textContent = closed ? '' : shown.map((p) => plabel(p) + (p.t === 'day' && p.d === TODAY() ? ' (오늘)' : p.t === 'wl' && p.w.mon === curMon() ? ' (이번 주)' : '')).filter(Boolean).join('   ·   ');
     $('#b-prev').disabled = pos <= 0; $('#b-next').disabled = TWO ? sp(pos) >= sp(P.length - 1) : pos >= P.length - 1;
@@ -399,27 +398,29 @@
     const v0 = view(pos), v1 = view(t); if (v0.L === v1.L && v0.R === v1.R) { pos = t; sync(); return; }
     if (EDIT) finishEdit(true);
     busy = true; desel(); closeTray();
-    const fwd = t > pos, dist = TWO ? Math.abs(sp(t) - sp(pos)) : Math.abs(t - pos), n = far ? Math.min(dist, 10) : 1, dur = n > 1 ? 540 : 700, ST = n > 5 ? 55 : 80, leaves = [];
+    const fwd = t > pos, dist = TWO ? Math.abs(sp(t) - sp(pos)) : Math.abs(t - pos), n = far ? Math.min(dist, 10) : 1, thin = pos !== 0 && t !== 0, dur = thin ? (n > 1 ? 460 : 540) : n > 1 ? 540 : 700, ST = thin ? (n > 5 ? 45 : 65) : n > 5 ? 55 : 80, leaves = [];
     const face = (leaf, cls, pg) => { const f = document.createElement('div'); f.className = 'face ' + cls; f.appendChild(pg); leaf.appendChild(f); };
+    // 얇은 종이 한 장(표지가 아닌 속지): ft = 넘어가는 앞면, bk = 뒷면. zf/zb = 앞면 조각과 뒷면 조각의 쌓임 순서
+    const paper = (cls, i, zf, zb, ft, bk) => { const l = document.createElement('div'); l.className = 'leaf pp ' + cls; l.style.setProperty('--d', i * ST + 'ms'); l.style.setProperty('--dur', dur + 'ms'); l.innerHTML = `<div class="pp-m" style="z-index:${zf}"><div class="pp-k"><div class="pp-o"></div></div><i class="pp-s"></i></div><div class="pp-m" style="z-index:${zb}"><div class="pp-k"><div class="pp-b"><i class="pp-e"></i></div><i class="pp-g"></i></div></div>`; $('.pp-o', l).appendChild(ft); $('.pp-b', l).appendChild(bk); leaves.push(l); book.appendChild(l); };
     const leaf = (cls, i, za, zb) => { const l = document.createElement('div'); l.className = 'leaf ' + cls; l.style.setProperty('--d', i * ST + 'ms'); l.style.setProperty('--dur', dur + 'ms'); l.style.setProperty('--za', za); l.style.setProperty('--zb', zb); leaves.push(l); return l; };
     const oldL = slotL.firstElementChild, oldR = slotR.lastElementChild; let newL = null, newR = null, fin;
     if (TWO && fwd) {
       if (v1.R >= 0) { newR = mk(v1.R, 'R'); slotR.insertBefore(newR, slotR.firstChild); }
       newL = mk(v1.L, 'L');
-      for (let i = 0; i < n; i++) { const l = leaf('f', i, 60 - i, 60 + i); face(l, 'ft', i === 0 && oldR ? oldR : blank('R')); face(l, 'bk', i === n - 1 ? newL : blank('L')); book.appendChild(l); }
+      for (let i = 0; i < n; i++) { const ft = i === 0 && oldR ? oldR : blank('R'), bk = i === n - 1 ? newL : blank('L'); if (thin) { paper('pf', i, 40 - i, 60 + i, ft, bk); continue; } const l = leaf('f', i, 60 - i, 60 + i); face(l, 'ft', ft); face(l, 'bk', bk); book.appendChild(l); }
       fin = () => { slotL.innerHTML = ''; slotL.appendChild(newL); slotR.innerHTML = ''; if (newR) slotR.appendChild(newR); };
     } else if (TWO) {
       if (v1.L >= 0) { newL = mk(v1.L, 'L'); slotL.insertBefore(newL, slotL.firstChild); }
       newR = mk(v1.R, 'R');
-      for (let i = 0; i < n; i++) { const l = leaf('b', i, 60 - i, 60 + i); face(l, 'ft', i === 0 && oldL ? oldL : blank('L')); face(l, 'bk', i === n - 1 ? newR : blank('R')); book.appendChild(l); }
+      for (let i = 0; i < n; i++) { const ft = i === 0 && oldL ? oldL : blank('L'), bk = i === n - 1 ? newR : blank('R'); if (thin) { paper('pb', i, 40 - i, 60 + i, ft, bk); continue; } const l = leaf('b', i, 60 - i, 60 + i); face(l, 'ft', ft); face(l, 'bk', bk); book.appendChild(l); }
       fin = () => { slotR.innerHTML = ''; slotR.appendChild(newR); slotL.innerHTML = ''; if (newL) slotL.appendChild(newL); };
     } else if (fwd) {
       newR = mk(v1.R, 'R'); slotR.insertBefore(newR, slotR.firstChild);
-      for (let i = 0; i < n; i++) { const l = leaf('f', i, 60 - i, 60 - i); face(l, 'ft', i === 0 && oldR ? oldR : blank('R')); face(l, 'bk', blank('R')); book.appendChild(l); }
+      for (let i = 0; i < n; i++) { const ft = i === 0 && oldR ? oldR : blank('R'); if (thin) { paper('pf', i, 80 - 2 * i, 81 - 2 * i, ft, blank('L')); continue; } const l = leaf('f', i, 60 - i, 60 - i); face(l, 'ft', ft); face(l, 'bk', blank('R')); book.appendChild(l); }
       fin = () => { slotR.innerHTML = ''; slotR.appendChild(newR); };
     } else {
       newR = mk(v1.R, 'R');
-      for (let i = 0; i < n; i++) { const l = leaf('r', i, 60 + i, 60 + i); face(l, 'ft', i === n - 1 ? newR : blank('R')); face(l, 'bk', blank('R')); book.appendChild(l); }
+      for (let i = 0; i < n; i++) { const ft = i === n - 1 ? newR : blank('R'); if (thin) { paper('pf prv', i, 40 + 2 * i, 41 + 2 * i, ft, blank('L')); continue; } const l = leaf('r', i, 60 + i, 60 + i); face(l, 'ft', ft); face(l, 'bk', blank('R')); book.appendChild(l); }
       fin = () => { slotR.innerHTML = ''; slotR.appendChild(newR); };
     }
     pos = t; sync();
@@ -563,11 +564,11 @@
   let TG = 'photo';
   function stkTray() {
     const items = ORDER.filter((k) => STK[k].g === TG);
-    openTray(`<div class="tray-h"><b>붙이기</b><button type="button" data-g="photo" class="${TG === 'photo' ? 'on' : ''}">사진</button><button type="button" data-g="print" class="${TG === 'print' ? 'on' : ''}">문구 종이</button><button type="button" data-x>닫기</button></div><div class="tray-g">${TG === 'photo' ? '<button type="button" class="mine" data-mine style="--i:0">내 사진 올려서<br>오려 붙이기</button>' : '<button type="button" class="mine" data-note style="--i:0">빈 쪽지 붙이기<br>(내 글씨로 써요)</button>'}${items.map((k, i) => `<button type="button" data-k="${k}" style="--i:${i + 1};--tw:${STK[k].w}" aria-label="${esc(STK[k].n)}"><div>${STK[k].h}</div></button>`).join('')}</div>`, (el) => {
+    openTray(`<div class="tray-h"><b>붙이기</b><button type="button" data-g="photo" class="${TG === 'photo' ? 'on' : ''}">사진</button><button type="button" data-g="print" class="${TG === 'print' ? 'on' : ''}">문구 종이</button><button type="button" data-g="doodle" class="${TG === 'doodle' ? 'on' : ''}">낙서</button><button type="button" data-g="pastel" class="${TG === 'pastel' ? 'on' : ''}">파스텔</button><button type="button" data-x>닫기</button></div><div class="tray-g g-${TG}">${TG === 'photo' ? '<button type="button" class="mine" data-mine style="--i:0">내 사진 올려서<br>오려 붙이기</button>' : TG === 'print' ? '<button type="button" class="mine" data-note style="--i:0">빈 쪽지 붙이기<br>(내 글씨로 써요)</button>' : ''}${items.map((k, i) => `<button type="button" data-k="${k}" style="--i:${i + 1};--tw:${STK[k].w}" aria-label="${esc(STK[k].n)}"><div>${STK[k].h}</div></button>`).join('')}</div>`, (el) => {
       $('[data-x]', el).onclick = closeTray; $$('[data-g]', el).forEach((b) => (b.onclick = () => { TG = b.dataset.g; stkTray(); }));
       const m = $('[data-mine]', el); if (m) m.onclick = () => pickPhoto((id, sh) => addStk('img', { ph: id, sh }));
       const nt = $('[data-note]', el); if (nt) nt.onclick = () => addStk('note', { t: '' });
-      $$('[data-k]', el).forEach((b) => (b.onclick = () => addStk(b.dataset.k)));
+      $$('[data-k]', el).forEach((b) => (b.onclick = () => { if (b.classList.contains('pick')) return; b.classList.add('pick'); setTimeout(() => addStk(b.dataset.k), 150); }));
     });
   }
   $('#b-stk').onclick = () => { if (!tray.classList.contains('hide') && $('.tray-g', tray)) return closeTray(); stkTray(); };

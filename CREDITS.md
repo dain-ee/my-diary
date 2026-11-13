@@ -4,6 +4,7 @@
 - 그리운 손글씨 (야옹이엄마·오엔·단정한·미가·송글손글): griun.co.kr 무료 배포, 원본 그대로 사용 (개작·수정·판매 금지)
 - Playfair Display, Pinyon Script, Abril Fatface, DM Serif Display, Permanent Marker: Google Fonts (OFL / Apache 2.0)
 - Pretendard: OFL
+- Galmuri11 · Galmuri9 (quiple/galmuri), DotGothic16, Quicksand (Google Fonts), 나눔스퀘어라운드 (NAVER): 모두 SIL OFL 1.1, KS X 1001 한글 2350자와 영문만 남긴 부분집합
 
 # 사진 출처
 
@@ -28,12 +29,17 @@
 | peony0.webp | https://unsplash.com/photos/photo-of-pink-petaled-flowers-9A_peGrSbZc | olia |
 | croissant1.webp | https://unsplash.com/photos/a-white-plate-topped-with-croissants-next-to-a-cup-of-coffee-lOAibPIy8WA | 12tones |
 
-## 표지 (가죽 · 바늘땀 · 레이스)
+## 표지
 
-모두 Unsplash 무료 사진(Unsplash License). 2026-11-13 받음. 원본은 `source/cover/dl/`, 가공 스크립트는 `source/cover/`, 가공본은 `assets/cover/`.
+| 파일 | 출처 | 가공 |
+| -- | -- | -- |
+| assets/cover/cover.webp | GPT 이미지 생성 (2026-11-13, 원본 `source/gen/cv_c.png`). 매끈한 연분홍 가죽, 가장자리 바늘땀, 왼쪽 흰 레이스 띠를 한 장으로 뽑음 | 정사각형 그림을 쪽 비율로 잘라 오른쪽 가장자리를 이어 붙이고(`source/cover/gencover.py`) 분홍을 조금 밝힘 |
 
-| 파일 | 사진 페이지 | 작가(@) | 가공 |
-| -- | -- | -- | -- |
-| leather.webp | https://unsplash.com/photos/a-light-beige-textured-background-ZVNnceSdN9s | Compagnons (sigmund) | 밝은 베이지의 결 고운 매끈한 가죽 사진을 줄여 쓰고 색만 연베이비핑크로 옮김 |
-| stitch_h.webp, stitch_v.webp | https://unsplash.com/photos/brown-leather-with-stitching-creating-a-textural-look-5_GUH12XnNc | Olga Kovalski (kovalskihelga) | 가죽 솔기에서 실과 바늘구멍만 구멍부터 구멍까지 잘라 이음. 실은 표지보다 살짝 밝은 분홍으로 |
-| lace.webp | https://unsplash.com/photos/a-close-up-of-a-white-lace-on-a-black-background-hD2Fs7Aa504 | Divazus Fabric Store (divazus) | 검은 배경의 밝기를 투명도로 바꿔 물결 가장자리 띠만 잘라 씀. 사진 틀에서 잘린 술 끝은 짧게 다듬음 |
+쓰지 않은 표지 후보: `source/gen/cv_a.png`, `source/gen/cv_b.png` (GPT 이미지 생성).
+예전 표지에 쓰던 Unsplash 사진 가공본(가죽·바늘땀·레이스)은 배포에서 빼고 `source/cover/old_assets/` 에만 남겨 두었어요.
+
+## 화면 무늬
+
+| 파일 | 출처 |
+| -- | -- |
+| assets/ui/w1_lace.svg | 직접 그린 도트 레이스 무늬 (코드로 만듦) |
