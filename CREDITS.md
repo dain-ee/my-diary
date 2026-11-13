@@ -21,6 +21,7 @@
 | -- | -- | -- |
 | assets/cover/cover.webp | GPT 이미지 생성 (2026-11-13, 원본 `source/gen/pc_c.png`). 연분홍 바탕에 십자수 리본·열쇠·하트와 도트 레이스 띠. 제목 글자는 코드로 얹음 | 가운데를 쪽 비율로 잘라 줄이고, 위아래 끝의 흰 도트 띠와 레이스에 가리는 아래쪽 흰 점은 분홍으로 덮고, 오른쪽 아래 반짝이는 위로 옮김 |
 | assets/cover/lace.webp | GPT 이미지 생성 (2026-11-13, 원본 `source/gen/lace2_d.png`). 비치는 망사 프릴에 작은 리본과 하트를 수놓은 흰 레이스 | 초록 바탕을 빼서 비치게 하고, 물결 끝이 위로 오게 뒤집은 뒤 리본·하트만 다시 바로 세움. 무늬 한 마디를 잘라 이어 붙임 |
+| assets/icon-180.png, icon-192.png, icon-512.png, icon-maskable-512.png, icon-64.png | 표지 그림(cover.webp)의 십자수 리본과 레이스(lace.webp)로 만든 앱 아이콘 (코드로 만듦, 2026-11-13) | 리본을 굵게 하고 분홍 바탕에 얹음 |
 
 쓰지 않은 레이스 후보: `source/gen/lace_a.png`, `lace_b.png`, `lace2_a.png`, `lace2_c.png` (모두 GPT 이미지 생성).
 쓰지 않은 표지 후보: `source/gen/pc_a.png`, `pc_b.png`, 예전 가죽 표지 `cv_a.png`, `cv_b.png`, `cv_c.png` (모두 GPT 이미지 생성).

@@ -128,6 +128,7 @@
     for (const id of Object.keys(DOC.entries)) if (DOC.gone[id] >= (DOC.entries[id].at || 0)) { delete DOC.entries[id]; ch = true; }
     for (const [k, v] of Object.entries(R.stk || {})) { const m = DOC.stk[k]; if (!m || (v.at || 0) > (m.at || 0)) { DOC.stk[k] = v; ch = true; } }
     if (R.fly && (R.fly.at || 0) > (DOC.fly.at || 0)) { DOC.fly = R.fly; ch = true; }
+    for (const [k, v] of Object.entries(R.mood || {})) { if (!DOC.mood) DOC.mood = {}; const m = DOC.mood[k]; if (!m || (v.at || 0) > (m.at || 0)) { DOC.mood[k] = v; ch = true; } }
     return ch;
   }
   async function pull() {
@@ -140,7 +141,7 @@
   function pushSoon() { clearTimeout(pushT); pushT = setTimeout(pushNow, 1500); }
   async function pushNow() {
     if (TCH || SRV !== 'on' || !AUTH || !AUTH.code) return;
-    try { await rpc('diary_put', { p_student: AUTH.who, p_code: AUTH.code, p_doc: await enc(JSON.stringify(DOC)), p_at: DOC.at, p_push: PUSH || {} }); } catch (e) { SRV = 'err'; }
+    try { await rpc('diary_put', { p_student: AUTH.who, p_code: AUTH.code, p_doc: await enc(JSON.stringify(DOC)), p_at: DOC.at, p_push: doneDay() ? { ...(PUSH || {}), _d: doneDay() } : PUSH || {} }); } catch (e) { SRV = 'err'; }
   }
   function save() { DOC.at = Date.now(); if (TCH) return; if (!LS.set('jd:doc', DOC)) toast('저장 칸이 꽉 찼어요. 사진을 조금 지워 주세요'); pushSoon(); }
   const srvText = () => ({ on: '이 기기와 서버 두 곳에 잠가서 저장하고 있어요', none: '지금은 이 기기에만 저장돼요', err: '서버에 닿지 않아서 이 기기에만 저장했어요. 다음에 열 때 다시 올려요', wait: '저장 칸을 확인하고 있어요', mock: '시험 화면이라 이 기기에만 저장돼요', tch: '선생님 화면이라 저장되지 않아요' }[SRV]);
@@ -306,7 +307,7 @@
   function mo2Html(p) {
     const y = +p.ym.slice(0, 4), m = +p.ym.slice(5) - 1, n = new Date(y, m + 1, 0).getDate(), off = (new Date(y, m, 1).getDay() + 6) % 7, today = TODAY();
     let h = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((c) => `<b>${c}</b>`).join(''); for (let i = 0; i < off; i++) h += '<i></i>';
-    for (let d = 1; d <= n; d++) { const k = `${p.ym}-${pad(d)}`, i = idxD(k), cls = `${hasRec(DAYS.d[k]) || dayEntries(k).length ? ' s' : ''}${k === today ? ' t' : ''}`; h += i >= 0 ? `<button type="button" class="mc-d${cls}" data-jump="${i}" aria-label="${esc(dLabel(k))}">${d}</button>` : `<i class="mc-d off">${d}</i>`; }
+    for (let d = 1; d <= n; d++) { const k = `${p.ym}-${pad(d)}`, i = idxD(k), cls = `${hasRec(DAYS.d[k]) || dayEntries(k).length ? ' s' : ''}${k === today ? ' t' : ''}`; h += i >= 0 ? `<button type="button" class="mc-d${cls}" data-jump="${i}" aria-label="${esc(dLabel(k))}">${d}${moodIc(k)}</button>` : `<i class="mc-d off">${d}</i>`; }
     const W = weeks().filter((w) => ymOf(w.mon) === p.ym);
     return `<div class="mo2 ${m % 2 ? 'b' : 'a'}"><div class="mo2-h w"><b>${m + 1}</b><span>${MON[m].toLowerCase()} ${y}</span></div><div class="mc w" style="--i:2">${h}</div><p class="mi-p w" style="--i:4">날짜를 누르면 그날 쪽이 펴져요</p>
       <div class="mo2-w">${W.map((w, i) => `<button type="button" class="w${w.mon === curMon() ? ' cur' : ''}" style="--i:${i + 5}" data-wk="${w.mon}"><span>${esc(wkLabel(w.mon))}</span><small>${wkRange(w.mon)}</small></button>`).join('')}</div></div>`;
@@ -371,7 +372,7 @@
       const D = dt(r.date), fut = r.date > today, ls = cellLines(r), nd = E.some((e) => e.date === r.date && !isW(e)), nw = E.some((e) => e.date === r.date && isW(e));
       const L = ls.length ? ls.map((t) => `<span class="w" style="--i:${i++}">${t}</span>`).join('') : fut ? '' : `<span class="w dim" style="--i:${i++}">${r.date === today ? '오늘은 아직 빈 칸' : '쉬어 간 날'}</span>`;
       const mk = (nd ? '<span class="tag">일기</span>' : '') + (nw ? `<span class="tag">${LOCK}고민</span>` : '');
-      return `<div class="cell ${r.date === today ? 'today' : ''}" data-jump="${idxD(r.date)}" role="button" tabindex="0" aria-label="${esc(dLabel(r.date))} 페이지 펴기"><div class="cell-d"><b>${D.getDate()}</b><i>${WD[D.getDay()]}</i>${r.min ? `<em class="did">${hm(r.min)}</em>` : ''}</div><div class="cell-t did">${L}${mk ? `<span class="cell-m">${mk}</span>` : ''}</div></div>`;
+      return `<div class="cell ${r.date === today ? 'today' : ''}" data-jump="${idxD(r.date)}" role="button" tabindex="0" aria-label="${esc(dLabel(r.date))} 페이지 펴기"><div class="cell-d"><b>${D.getDate()}</b><i>${WD[D.getDay()]}</i>${moodIc(r.date)}${r.min ? `<em class="did">${hm(r.min)}</em>` : ''}</div><div class="cell-t did">${L}${mk ? `<span class="cell-m">${mk}</span>` : ''}</div></div>`;
     }).join('')}</div></div>`;
   }
   const phHtml = (x, cls) => `<div class="pc sh-${esc(x.sh || 'pol')} ${cls || ''}"><div class="pc-i"><img data-ph="${esc(x.id)}" alt="" draggable="false"></div></div>`;
@@ -404,11 +405,57 @@
     return `<div class="dp"><div class="dp-h"><span class="num">${D.getDate()}</span><div class="dp-hd"><b>${KWD[D.getDay()]}요일${isT ? '<span class="tag">오늘</span>' : ''}</b><span class="cap">${MON[D.getMonth()]} ${D.getFullYear()}</span></div><div class="dp-tot w"><span class="lab">이날 공부한 시간</span><b class="did">${r.min ? fmtMin(r.min) : fut ? '' : '0분'}</b></div></div>
       <div class="dp-plan"><div class="dp-list"><span class="h-ul">한 것</span>${li ? `<ul class="dl">${li}</ul>` : ex.length ? '' : `<p class="empty sm">${none}</p>`}${ex.length ? `<ul class="dx did">${ex.map((t) => `<li class="w" style="--i:${i++}">${esc(t)}</li>`).join('')}</ul>` : ''}</div>
         <div class="dp-tt"><span class="h-ul">시간표</span><span class="lab tt-cap">한 칸 10분</span>${ttHtml(r)}</div></div>
-      ${fut ? '' : `<div class="mine"><div class="mine-h"><span class="kh">${isT ? '오늘의 일기' : '이날의 일기'}</span>${can && !dd.length ? `<button type="button" class="lbtn" data-new="day" data-date="${k}">일기 쓰기</button>` : ''}</div>
+      ${fut ? '' : moodHtml(k, isT) + `<div class="mine"><div class="mine-h"><span class="kh">${isT ? '오늘의 일기' : '이날의 일기'}</span>${can && !dd.length ? `<button type="button" class="lbtn" data-new="day" data-date="${k}">일기 쓰기</button>` : ''}</div>
         ${dd.map(entHtml).join('') || `<p class="empty sm">${isT ? '아직 안 썼어요. 한 줄이면 충분해요.' : '이날은 쓴 일기가 없어요.'}</p>`}
         <div class="mine-h sub"><span class="kh">${LOCK}고민 <small>나만 보기</small></span>${can && !ww.length ? `<button type="button" class="lbtn" data-new="worry" data-date="${k}">고민 적기</button>` : ''}</div>
         ${ww.map(entHtml).join('')}</div>`}</div>`;
   }
+  // ── 오늘의 기분: 먹회색 픽셀 얼굴. 날짜별로 일기와 같은 문서에 넣어요 ──
+  const FACE = ['..XXXXX..', '.X.....X.', 'X.......X', 'X.......X', 'X.......X', 'X.......X', 'X.......X', '.X.....X.', '..XXXXX..'];
+  const MOODS = [
+    ['good', '좋아', [[3, 3], [5, 3], [2, 5], [3, 6], [4, 6], [5, 6], [6, 5]]],
+    ['proud', '뿌듯', [[2, 3], [3, 3], [5, 3], [6, 3], [2, 5], [3, 6], [4, 6], [5, 6], [6, 5]]],
+    ['soso', '그냥', [[3, 3], [5, 3], [3, 6], [4, 6], [5, 6]]],
+    ['tired', '피곤', [[2, 3], [3, 3], [5, 3], [6, 3], [2, 4], [6, 4], [4, 6]]],
+    ['sad', '속상', [[3, 3], [5, 3], [3, 4], [3, 5], [4, 5], [5, 5], [2, 6], [6, 6]]],
+    ['anx', '불안', [[3, 3], [5, 3], [2, 6], [3, 5], [4, 6], [5, 5], [6, 6]]],
+    ['flut', '설렘', null],
+    ['mad', '화남', [[2, 2], [3, 3], [6, 2], [5, 3], [3, 4], [5, 4], [3, 6], [4, 6], [5, 6]]],
+  ];
+  const HEART9 = ['.........', '.XX...XX.', 'XXXX.XXXX', 'XXXXXXXXX', 'XXXXXXXXX', '.XXXXXXX.', '..XXXXX..', '...XXX...', '....X....'];
+  const moodSvg = (k) => { const M = MOODS.find((m) => m[0] === k); if (!M) return ''; let r = ''; const rows = M[2] ? FACE : HEART9; rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === 'X') r += `<rect x="${x}" y="${y}" width="1" height="1"/>`; })); (M[2] || []).forEach(([x, y]) => (r += `<rect x="${x}" y="${y}" width="1" height="1"/>`)); return `<svg viewBox="0 0 9 9" aria-hidden="true">${r}</svg>`; };
+  const moodOf = (d) => (DOC.mood && DOC.mood[d] && DOC.mood[d].k) || '';
+  const moodIc = (d) => { const m = moodOf(d); return m ? `<span class="mdi">${moodSvg(m)}</span>` : ''; };
+  let MOODOPEN = false;
+  function moodHtml(k, isT) {
+    const m = moodOf(k); if (!isT && !m) return '';
+    if (m && !(isT && MOODOPEN)) { const M = MOODS.find((x) => x[0] === m); return `<div class="mood"><span class="kh">${isT ? '오늘의 기분' : '이날의 기분'}</span><button type="button" class="mood-b on" ${isT ? 'data-moodopen aria-label="기분 바꾸기"' : 'disabled'}>${moodSvg(m)}<span>${M ? M[1] : ''}</span></button></div>`; }
+    return `<div class="mood"><span class="kh">오늘의 기분을 선택해 봐요</span><div class="mood-l">${MOODS.map(([id, n]) => `<button type="button" class="mood-b${id === m ? ' on' : ''}" data-mood="${id}">${moodSvg(id)}<span>${n}</span></button>`).join('')}</div></div>`;
+  }
+  // 오늘 기분을 골랐거나 글을 썼으면 그 날짜 (알림을 또 보내지 않게 서버에 날짜만 알려요. 글 내용은 잠긴 그대로예요)
+  const doneDay = () => { const t = TODAY(); return moodOf(t) || Object.values(DOC.entries || {}).some((e) => e && e.date === t && (String(e.text || '').trim() || (e.ph || []).length)) ? t : ''; };
+
+  // ── 홈 화면에 두기 ──
+  const ALONE = (() => { try { return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches; } catch (e) { return false; } })();
+  const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let bip = null;
+  addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); bip = e; });
+  addEventListener('appinstalled', () => { bip = null; LS.set('jd:apphide', 1); toast('홈 화면에 다이어리가 생겼어요'); refresh(); });
+  const instShow = () => !ALONE && !TCH && !!AUTH && !LS.get('jd:apphide', 0);
+  const instRow = () => `<div class="inst"><img src="assets/icon-180.png" alt=""><div><b>홈 화면에 다이어리 두기</b><span>리본 아이콘을 눌러 바로 열 수 있어요</span></div><button type="button" class="lbtn sm" data-inst>방법 보기</button></div>`;
+  function instOpen(os) {
+    const and = os ? os === 'and' : /Android/.test(navigator.userAgent), pr = os ? null : bip;
+    const SH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M8 10H6v11h12V10h-2" fill="none" stroke="#575757" stroke-width="1.8"/></svg>', AD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM12 8v8M8 12h8" fill="none" stroke="#575757" stroke-width="1.8"/></svg>';
+    const st = (L) => `<ol class="ins-st">${L.map(([t, d, ic, chip], i) => `<li><i>${i + 1}</i><div><b>${t}</b>${d ? `<span>${d}</span>` : ''}${chip ? `<em>${ic || ''}${chip}</em>` : ''}</div></li>`).join('')}</ol>`;
+    const ios = st([['사파리의 공유 단추를 눌러요', '네모에 화살표가 위로 난 모양이에요. 안 보이면 주소창 옆 점 세 개를 먼저 눌러요', SH, '공유'], ['목록을 올려 「홈 화면에 추가」를 눌러요', '', AD, '홈 화면에 추가'], ['오른쪽 위 「추가」를 눌러요', '「웹 앱으로 열기」가 있으면 켜 둔 채로 추가해요'], ['홈 화면의 리본 아이콘으로 열어요', '처음 한 번만 내 코드를 적으면 돼요. 알림은 여기 설정에서 켜요']]);
+    const an = st([['크롬 오른쪽 위 점 세 개를 눌러요', '삼성 인터넷이면 아래쪽 줄 세 개를 눌러요'], ['「앱 설치」 또는 「홈 화면에 추가」를 눌러요', '', AD, '앱 설치'], ['「설치」를 눌러요', '홈 화면에 리본 아이콘이 생겨요']]);
+    const done = () => { LS.set('jd:apphide', 1); closeTray(); refresh(); };
+    openTray(`<div class="tray-h"><b>홈 화면에 다이어리 두기</b><button type="button" data-x>닫기</button></div><div class="ins"><div class="ins-h"><img src="assets/icon-180.png" alt=""><p>한 번만 해 두면 리본 아이콘을 눌러 바로 열려요</p></div>${pr ? '<button type="button" class="lbtn" id="ins-go">지금 설치하기</button>' : and ? an : ios}<div class="ins-b"><button type="button" class="lbtn" id="ins-ok">다 했어요</button><button type="button" class="lbtn sm" id="ins-later">나중에 할게요</button></div></div>`, (el) => {
+      $('[data-x]', el).onclick = done; $('#ins-ok', el).onclick = done; $('#ins-later', el).onclick = done;
+      const g = $('#ins-go', el); if (g) g.onclick = async () => { try { bip.prompt(); await bip.userChoice; } catch (e) {} bip = null; done(); };
+    });
+  }
+  document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('[data-inst]')) instOpen(); });
   const lstHead = (t, cnt, sub) => `<div class="lst-h"><div class="lst-t"><span class="kttl">${t}</span>${cnt ? `<span class="lab">${cnt}</span>` : ''}</div><p class="ksub">${sub}</p></div>`;
   // 한눈에 보기: 날짜 페이지에 쓴 글을 한 줄씩 모아 보여 주기만 해요. 줄을 누르면 그 날짜 페이지로 넘어가요
   function listHtml(kind) {
@@ -426,13 +473,13 @@
   function aboutHtml() {
     const ios = /iPhone|iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), alone = matchMedia('(display-mode: standalone)').matches || navigator.standalone, perm = 'Notification' in window ? Notification.permission : 'no';
     const HT = '<svg class="set-ht" viewBox="0 0 7 6" aria-hidden="true"><path d="M1 0h2v1h1V0h2v1h1v2H6v1H5v1H4v1H3V5H2V4H1V3H0V1h1z"/></svg>';
-    const note = perm === 'granted' && PUSH ? '켜져 있어요. 밤에 한 줄 쓰자고 알려 줘요.' : perm === 'no' ? (ios && !alone ? '홈 화면에 추가한 앱에서 켤 수 있어요.' : '이 브라우저는 알림을 받을 수 없어요.') : perm === 'denied' ? '꺼져 있어요. 설정 앱에서 켤 수 있어요.' : '밤에 한 줄 쓰자고 알려 줘요.';
+    const note = perm === 'granted' && PUSH ? '켜져 있어요. 기분도 안 고르고 글도 안 쓴 날에만, 하루에 한 번 알려 줘요.' : perm === 'no' ? (ios && !alone ? '홈 화면에 추가한 앱에서 켤 수 있어요.' : '이 브라우저는 알림을 받을 수 없어요.') : perm === 'denied' ? '꺼져 있어요. 설정 앱에서 켤 수 있어요.' : '하루에 한 번, 「오늘의 기분을 선택해 봐요」 하고 알려 줘요.';
     return `${lstHead('설정', '', '글은 내 코드로 잠가서 저장해요. 고민은 나만 볼 수 있어요.')}
       <div class="set"><h3>내 글씨체</h3><div class="fonts">${FONTS.map((f) => `<button type="button" data-font="${f.id}" class="${f.id === FONT ? 'on' : ''}">${HT}<small>${f.n}</small><span class="pv" style="font-family:'${f.fam}',cursive">오늘도 한 장, 천천히 123</span></button>`).join('')}</div></div>
       <div class="set"><h3>책갈피</h3><div class="bmset">${BMS.map(([k, n]) => `<button type="button" data-bm="${k}" class="${k === BM ? 'on' : ''}" aria-label="${n}"><img src="assets/fly/bm_${k}.webp" alt="" draggable="false"><small>${HT}${n}</small></button>`).join('')}</div></div>
       <div class="set rw"><div><h3>저장</h3><p id="srv-state">${srvText()}</p></div></div>
       <div class="set rw"><div><h3>알림</h3><p>${note}</p></div>${perm === 'default' || (perm === 'granted' && !PUSH) ? '<button type="button" class="lbtn sm" id="push-on">알림 켜기</button>' : ''}</div>
-      ${alone ? '' : `<div class="set rw"><div><h3>앱으로 쓰기</h3><p>${ios ? '사파리 공유 단추에서 「홈 화면에 추가」를 골라요.' : '브라우저 메뉴에서 「앱 설치」를 골라요.'}</p></div></div>`}
+      ${alone ? '' : `<div class="set rw"><div><h3>앱으로 쓰기</h3><p>${ios ? '사파리 공유 단추에서 「홈 화면에 추가」를 골라요.' : '브라우저 메뉴에서 「앱 설치」를 골라요.'}</p></div><button type="button" class="lbtn sm" data-inst>방법 보기</button></div>`}
       <div class="set rw"><div><h3>소리</h3><p>종이 넘기는 소리, 연필 소리, 스티커 붙이는 소리가 나요.</p></div><button type="button" class="lbtn sm" id="snd-set">${SND ? '소리 끄기' : '소리 켜기'}</button></div>
       ${TCH ? '' : '<div class="set rw"><div><h3>잠그기</h3><p>다시 열 때 코드가 필요해요. 쓴 글은 그대로예요.</p></div><button type="button" class="lbtn sm" id="lock-ask">잠그기</button><div id="lock-c"></div></div>'}`;
   }
@@ -463,6 +510,7 @@
     for (const [pi, y] of sc) { const el = $(`.slot > .page[data-pi="${pi}"] .in`); if (el) el.scrollTop = y; }
     sync();
   }
+  { const _toc = BODY.toc; BODY.toc = () => _toc() + (instShow() ? instRow() : ''); }
   function refresh() { if (busy) return; desel(); mount(true); }
   function layout() {
     const W = innerWidth, H = innerHeight, two = W > H && W >= 900, tabw = W < 500 ? 24 : W < 900 ? 32 : 36, padX = W < 500 ? 6 : 18, availH = H - (W < 500 ? 22 : 40) - 66, availW = W - padX * 2 - tabw - 16;
@@ -541,6 +589,8 @@
     $$('[data-wk]', el).forEach((b) => (b.onclick = () => go(idxOf(b.dataset.wk, 'wl'), true)));
     $$('[data-fly]', el).forEach((inp) => (inp.oninput = () => { DOC.fly[inp.dataset.fly] = inp.value; DOC.fly.at = Date.now(); save(); }));
     $$('[data-new]', el).forEach((b) => (b.onclick = () => newEntry(b.dataset.new, b.dataset.date)));
+    $$('[data-mood]', el).forEach((b) => (b.onclick = () => { if (!DOC.mood) DOC.mood = {}; DOC.mood[TODAY()] = { k: b.dataset.mood, at: Date.now() }; MOODOPEN = false; snd('tab'); save(); tchNote(); refresh(); }));
+    $$('[data-moodopen]', el).forEach((b) => (b.onclick = () => { MOODOPEN = true; refresh(); }));
     $$('[data-edit]', el).forEach((b) => (b.onclick = () => startEdit(b.closest('[data-ent]').dataset.ent)));
     $$('[data-del]', el).forEach((b) => (b.onclick = () => askDel(b.closest('[data-ent]'))));
     $$('.cell[data-jump]', el).forEach((c) => (c.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } }));
@@ -763,9 +813,11 @@
     if (!AUTH && q && !/^(mock|go)(=|$)/.test(q)) { history.replaceState(null, '', location.pathname); await login(q); }
     else if (q && !MOCK) history.replaceState(null, '', location.pathname);
     if (AUTH) afterAuth();
+    if (AUTH && /^go=today/.test(q)) setTimeout(() => go(idxD(TODAY()), true), 900);
+    if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (e) => { if (e.data && e.data.go === 'today' && AUTH) { const t = idxD(TODAY()); if (t >= 0 && !busy) go(t, true); } });
     if ('serviceWorker' in navigator && !LOCAL) navigator.serviceWorker.register('sw.js').catch(() => {});
   }
   const _lu = loadUniv; loadUniv = async function () { await _lu(); buildTabs(); sync(); };
-  window.__jd = { go, P: () => P, pos: () => pos, doc: () => DOC, srv: () => SRV, two: () => TWO, setFont, addStk };
+  window.__jd = { go, P: () => P, pos: () => pos, doc: () => DOC, srv: () => SRV, two: () => TWO, setFont, addStk, inst: instOpen };
   boot();
 })();

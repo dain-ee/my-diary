@@ -868,3 +868,26 @@ textarea, input { -webkit-user-select: text; user-select: text; -webkit-touch-ca
   .ent-ph .x { position: absolute; } .ent-ph .x::after { content: ""; position: absolute; inset: -13px; }
   #tabs button::after { content: ""; position: absolute; left: -5px; right: -12px; top: 0; bottom: 0; }
 }
+
+/* 오늘의 기분: 먹회색 픽셀 얼굴, 고른 것만 연분홍 형광펜 */
+.mood { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--u) * 1.2) calc(var(--u) * 1.6); margin: calc(var(--u) * 3) 0 0; }
+.mood-l { width: 100%; display: grid; grid-template-columns: repeat(8, 1fr); gap: calc(var(--u) * .6); }
+.mood-b { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * .7); min-width: 0; padding: calc(var(--u) * 1) calc(var(--u) * .4); background: none; color: var(--gr); font: 400 max(10px, calc(var(--u) * 1.8)) / 1 var(--f-px); }
+.mood-b svg { width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); fill: currentColor; shape-rendering: crispEdges; }
+.mood-b.on { background: var(--pk); }
+.mood > .mood-b { flex-direction: row; padding: calc(var(--u) * .7) calc(var(--u) * 1.4); } .mood > .mood-b svg { width: calc(var(--u) * 2.8); height: calc(var(--u) * 2.8); }
+@media (max-width: 499px) { .mood-l { grid-template-columns: repeat(4, 1fr); } .mood-b { min-height: 44px; } }
+.mdi { display: inline-flex; } .mdi svg { width: calc(var(--u) * 1.9); height: calc(var(--u) * 1.9); fill: var(--gr); shape-rendering: crispEdges; }
+.cell-d .mdi { margin-top: calc(var(--u) * .6); }
+.mc-d { position: relative; } .mc-d .mdi { position: absolute; right: 6%; top: 6%; } .mc-d .mdi svg { width: calc(var(--u) * 1.5); height: calc(var(--u) * 1.5); } .mc-d.t .mdi svg { fill: var(--wh); }
+/* 홈 화면에 두기 */
+.inst { display: flex; align-items: center; gap: calc(var(--u) * 1.6); margin-top: calc(var(--u) * 2.4); padding-top: calc(var(--u) * 1.6); border-top: 1px dotted rgba(107, 107, 107, .5); }
+.inst img { width: calc(var(--u) * 6); height: calc(var(--u) * 6); border-radius: 22%; flex: none; }
+.inst > div { flex: 1; min-width: 0; } .inst b { display: block; font: 400 max(11px, calc(var(--u) * 2.1)) / 1.3 var(--f-px); color: var(--ink); } .inst span { display: block; font: 400 max(10px, calc(var(--u) * 1.7)) / 1.3 var(--f-px); color: var(--gr); }
+.ins { padding: 4px 2px 6px; color: var(--ink); }
+.ins-h { display: flex; align-items: center; gap: 12px; margin: 4px 0 12px; } .ins-h img { width: 56px; height: 56px; border-radius: 22%; } .ins-h p { margin: 0; font: 400 13px/1.4 var(--f-px); color: var(--gr); }
+.ins-st { list-style: none; margin: 0; padding: 0; } .ins-st li { display: flex; gap: 10px; padding: 10px 0; border-top: 1px dotted rgba(107, 107, 107, .5); }
+.ins-st i { flex: none; width: 22px; height: 22px; background: var(--pk); color: var(--gr); font: 400 12px/22px var(--f-px); font-style: normal; text-align: center; }
+.ins-st b { display: block; font: 400 14px/1.35 var(--f-px); color: var(--ink); } .ins-st span { display: block; margin-top: 3px; font: 400 12px/1.35 var(--f-px); color: var(--gr); }
+.ins-st em { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 8px; border: 1.5px dotted var(--gr); background: #fff; font: 400 12px/1 var(--f-px); font-style: normal; color: var(--gr); } .ins-st em svg { width: 16px; height: 16px; }
+.ins-b { display: flex; align-items: center; gap: 8px; margin-top: 12px; } .ins .lbtn { height: 38px; padding: 0 14px; font-size: 13px; } .ins .lbtn.sm { height: 32px; font-size: 12px; }
