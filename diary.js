@@ -43,15 +43,17 @@
       done(c, o, t) { puff(c, o, t, { f0: R(1500, 1900), q: 3, g: 0.8, att: 0.001, dur: 0.022, lp: 4200 }); puff(c, o, t + 0.004, { type: 'lowpass', f0: 340, q: 0.8, g: 0.6, att: 0.002, dur: 0.08, lp: 900 }); puff(c, o, t + 0.06, { f0: 1300, q: 3, g: 0.3, att: 0.001, dur: 0.02, lp: 3500 }); },
       // 인덱스 탭: 아주 작은 톡
       tab(c, o, t) { puff(c, o, t, { f0: R(1900, 2400), q: 2.5, g: 0.4, att: 0.001, dur: 0.016, lp: 4200 }); puff(c, o, t, { type: 'lowpass', f0: 400, q: 0.6, g: 0.2, att: 0.002, dur: 0.05, lp: 900 }); },
+      // 기분 고를 때: 방울이 뽀글뽀글 올라와요 (높이가 조금씩 올라가는 부드러운 방울 네 개)
+      bubble(c, o, t) { [0, 0.085, 0.165, 0.25].forEach((dt, i) => { const f = [430, 520, 640, 790][i] * R(0.96, 1.04), x = t + dt + R(0, 0.012), os = c.createOscillator(), g = c.createGain(); os.type = 'sine'; os.frequency.setValueAtTime(f, x); os.frequency.exponentialRampToValueAtTime(f * 1.55, x + 0.07); g.gain.setValueAtTime(0.0001, x); g.gain.linearRampToValueAtTime(0.11, x + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, x + 0.09); os.connect(g); g.connect(o); os.start(x); os.stop(x + 0.11); }); },
       // 글 적을 때: 연필 사각
-      pencil(c, o, t) { const d = R(0.09, 0.15); puff(c, o, t, { f0: R(2400, 3300), f1: R(2800, 4200), q: 1.1, g: R(0.4, 0.55), att: 0.012, dur: d, lp: 5200 }); puff(c, o, t + d * 0.3, { f0: R(3000, 4000), q: 2.5, g: 0.22, att: 0.004, dur: d * 0.4, lp: 5500 }); },
+      pencil(c, o, t) { const d = R(0.07, 0.12); puff(c, o, t, { f0: R(2400, 3300), f1: R(2800, 4200), q: 1.1, g: R(0.4, 0.55), att: 0.012, dur: d, lp: 5200 }); },
     };
   })();
   window.JDSOUND = SOUND;
   let SND = LS.get('jd:snd', 1) !== 0, AC = null; const SL = {};
   const ac = () => { if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { AC = new C(); } catch (e) { return null; } } if (AC.state === 'suspended') { const p = AC.resume(); if (p && p.catch) p.catch(() => {}); } return AC; };
   // 같은 소리가 너무 바짝 겹치지 않게 사이를 둬요
-  function snd(k) { if (!SND) return; const now = performance.now(), gap = { pencil: 75, flip: 150, riffle: 300, cover: 300, tab: 60 }[k] || 40; if (now - (SL[k] || 0) < gap) return; SL[k] = now; const c = ac(); if (!c) return; try { SOUND[k](c, c.destination, c.currentTime + 0.01); } catch (e) {} }
+  function snd(k) { if (!SND) return; const now = performance.now(), gap = { pencil: 90, flip: 150, riffle: 300, cover: 300, tab: 60 }[k] || 40; if (now - (SL[k] || 0) < gap) return; SL[k] = now; const c = ac(); if (!c) return; try { SOUND[k](c, c.destination, c.currentTime + 0.01); } catch (e) {} }
   const sndUi = () => { const b = document.getElementById('snd'); if (b) { b.textContent = SND ? '소리 켬' : '소리 끔'; b.setAttribute('aria-pressed', SND ? 'true' : 'false'); } const q = document.getElementById('snd-set'); if (q) q.textContent = SND ? '소리 끄기' : '소리 켜기'; };
   document.addEventListener('click', (e) => { if (!e.target.closest || !e.target.closest('#snd, #snd-set')) return; e.stopPropagation(); SND = !SND; LS.set('jd:snd', SND ? 1 : 0); sndUi(); snd('tab'); }, true);
   document.addEventListener('input', (e) => { if (e.target.matches && e.target.matches('textarea, .idi, #note-in')) snd('pencil'); }, true);
@@ -403,9 +405,10 @@
     const none = fut ? '아직 오지 않은 날이에요.' : isT ? '오늘은 아직 기록이 없어요. 말랑대학에서 공부 시간을 재면 여기에 남아요.' : '기록 없이 쉬어 간 날이에요.';
     const E = fut ? [] : dayEntries(k), dd = E.filter((e) => !isW(e)), ww = E.filter(isW), can = !fut && !EDIT;
     return `<div class="dp"><div class="dp-h"><span class="num">${D.getDate()}</span><div class="dp-hd"><b>${KWD[D.getDay()]}요일${isT ? '<span class="tag">오늘</span>' : ''}</b><span class="cap">${MON[D.getMonth()]} ${D.getFullYear()}</span></div><div class="dp-tot w"><span class="lab">이날 공부한 시간</span><b class="did">${r.min ? fmtMin(r.min) : fut ? '' : '0분'}</b></div></div>
+      ${fut ? '' : moodHtml(k, isT)}
       <div class="dp-plan"><div class="dp-list"><span class="h-ul">한 것</span>${li ? `<ul class="dl">${li}</ul>` : ex.length ? '' : `<p class="empty sm">${none}</p>`}${ex.length ? `<ul class="dx did">${ex.map((t) => `<li class="w" style="--i:${i++}">${esc(t)}</li>`).join('')}</ul>` : ''}</div>
         <div class="dp-tt"><span class="h-ul">시간표</span><span class="lab tt-cap">한 칸 10분</span>${ttHtml(r)}</div></div>
-      ${fut ? '' : moodHtml(k, isT) + `<div class="mine"><div class="mine-h"><span class="kh">${isT ? '오늘의 일기' : '이날의 일기'}</span>${can && !dd.length ? `<button type="button" class="lbtn" data-new="day" data-date="${k}">일기 쓰기</button>` : ''}</div>
+      ${fut ? '' : `<div class="mine"><div class="mine-h"><span class="kh">${isT ? '오늘의 일기' : '이날의 일기'}</span>${can && !dd.length ? `<button type="button" class="lbtn" data-new="day" data-date="${k}">일기 쓰기</button>` : ''}</div>
         ${dd.map(entHtml).join('') || `<p class="empty sm">${isT ? '아직 안 썼어요. 한 줄이면 충분해요.' : '이날은 쓴 일기가 없어요.'}</p>`}
         <div class="mine-h sub"><span class="kh">${LOCK}고민 <small>나만 보기</small></span>${can && !ww.length ? `<button type="button" class="lbtn" data-new="worry" data-date="${k}">고민 적기</button>` : ''}</div>
         ${ww.map(entHtml).join('')}</div>`}</div>`;
@@ -426,7 +429,17 @@
   const moodSvg = (k) => { const M = MOODS.find((m) => m[0] === k); if (!M) return ''; let r = ''; const rows = M[2] ? FACE : HEART9; rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === 'X') r += `<rect x="${x}" y="${y}" width="1" height="1"/>`; })); (M[2] || []).forEach(([x, y]) => (r += `<rect x="${x}" y="${y}" width="1" height="1"/>`)); return `<svg viewBox="0 0 9 9" aria-hidden="true">${r}</svg>`; };
   const moodOf = (d) => (DOC.mood && DOC.mood[d] && DOC.mood[d].k) || '';
   const moodIc = (d) => { const m = moodOf(d); return m ? `<span class="mdi">${moodSvg(m)}</span>` : ''; };
-  let MOODOPEN = false;
+  let MOODOPEN = false, MOODFX = false;
+  const FXS = { heart: ['.X.X.', 'XXXXX', 'XXXXX', '.XXX.', '..X..'], z: ['XXXXX', '...X.', '..X..', '.X...', 'XXXXX'], drop: ['..X..', '..X..', '.XXX.', 'XXXXX', '.XXX.'], bolt: ['..XX.', '.XX..', 'XXXXX', '..XX.', '.XX..'], dot: ['.....', '.XXX.', '.XXX.', '.XXX.', '.....'] };
+  const FXK = { good: 'heart', proud: 'heart', flut: 'heart', tired: 'z', sad: 'drop', anx: 'drop', mad: 'bolt', soso: 'dot' };
+  function moodFx(btn, k) {
+    const ic = $('svg', btn) || btn, r = ic.getBoundingClientRect(), u = Math.max(12, r.width * 0.62), sh = FXS[FXK[k] || 'heart']; let rects = '';
+    sh.forEach((row, y) => [...row].forEach((c, x) => { if (c === 'X') rects += `<rect x="${x}" y="${y}" width="1" height="1"/>`; }));
+    btn.classList.add('pop'); setTimeout(() => btn.classList.remove('pop'), 320);
+    const box = document.createElement('div'); box.className = 'mdfx'; box.setAttribute('aria-hidden', 'true'); box.style.left = r.left + r.width / 2 + 'px'; box.style.top = r.top + r.height / 2 + 'px';
+    for (let i = 0; i < 6; i++) { const z = Math.round(u * [1, 0.7, 1.25, 0.85, 0.6, 1.05][i]), dx = Math.round((i - 2.5) * u * 0.9 + (Math.random() - 0.5) * u * 0.6), dy = -Math.round(u * (2.4 + Math.random() * 1.6)); box.insertAdjacentHTML('beforeend', `<svg viewBox="0 0 5 5" class="${i % 3 === 1 ? 'g' : ''}" style="width:${z}px;height:${z}px;margin:${-z / 2}px 0 0 ${-z / 2}px;--x:${dx}px;--y:${dy}px;--w:${Math.round(u * (i % 2 ? 0.35 : -0.35))}px;--d:${i * 45}ms">${rects}</svg>`); }
+    document.body.appendChild(box); setTimeout(() => box.remove(), 1000);
+  }
   function moodHtml(k, isT) {
     const m = moodOf(k); if (!isT && !m) return '';
     if (m && !(isT && MOODOPEN)) { const M = MOODS.find((x) => x[0] === m); return `<div class="mood"><span class="kh">${isT ? '오늘의 기분' : '이날의 기분'}</span><button type="button" class="mood-b on" ${isT ? 'data-moodopen aria-label="기분 바꾸기"' : 'disabled'}>${moodSvg(m)}<span>${M ? M[1] : ''}</span></button></div>`; }
@@ -546,6 +559,7 @@
     if (EDIT) finishEdit(true);
     busy = true; desel(); closeTray();
     const fwd = t > pos, dist = TWO ? Math.abs(sp(t) - sp(pos)) : Math.abs(t - pos), n = far ? Math.min(dist, 10) : 1, thin = pos !== 0 && t !== 0, dur = thin ? (n > 1 ? 460 : 540) : n > 1 ? 540 : 700, ST = thin ? (n > 5 ? 45 : 65) : n > 5 ? 55 : 80, leaves = [];
+    if (!thin) { HOLD = Date.now() + dur + 440; EQ = 0; }   // 표지가 열리고 닫히는 동안과 그 직후의 손짓은 넘김으로 치지 않아요
     snd(thin ? (n > 1 ? 'riffle' : 'flip') : 'cover');
     const face = (leaf, cls, pg) => { const f = document.createElement('div'); f.className = 'face ' + cls; f.appendChild(pg); leaf.appendChild(f); };
     // 얇은 종이 한 장(표지가 아닌 속지): ft = 넘어가는 앞면, bk = 뒷면. zf/zb = 앞면 조각과 뒷면 조각의 쌓임 순서
@@ -572,9 +586,9 @@
       fin = () => { slotR.innerHTML = ''; slotR.appendChild(newR); };
     }
     pos = t; sync();
-    setTimeout(() => { fin(); leaves.forEach((l) => l.remove()); busy = false; sync(); if (EQ) { const d = EQ > 0 ? 1 : -1; EQ -= d; step(d); } }, dur + (n - 1) * ST + 40);
+    setTimeout(() => { fin(); leaves.forEach((l) => l.remove()); busy = false; sync(); if (!thin) EQ = 0; if (EQ) { const d = EQ > 0 ? 1 : -1; EQ -= d; step(d); } }, dur + (n - 1) * ST + 40);
   }
-  const step = (d) => { if (TWO) { const s = sp(pos) + d; if (s < 0 || s > sp(P.length - 1)) return; go(s === 0 ? 0 : s * 2 - 1); } else { let t = pos + d; if (d > 0 && P[pos] && P[pos].t === 'ins') t++; if (P[t] && P[t].t === 'ins') t += d; go(t); } };
+  const step = (d) => { if (Date.now() < HOLD) return; if (TWO) { const s = sp(pos) + d; if (s < 0 || s > sp(P.length - 1)) return; go(s === 0 ? 0 : s * 2 - 1); } else { let t = pos + d; if (d > 0 && P[pos] && P[pos].t === 'ins') t++; if (P[t] && P[t].t === 'ins') t += d; go(t); } };
 
   // ── 묶기 ──
   function bindPage(el, pi) {
@@ -582,15 +596,23 @@
     if (p.t === 'cover') {
       const f = $('#code-f', el);
       if (f) { f.onsubmit = (e) => { e.preventDefault(); login($('#code-in', el).value); }; }
-      else el.onclick = () => go(TWO ? 1 : 2);
+      else el.onclick = (e) => { e.stopPropagation(); go(TWO ? 1 : 2); };
       return;
     }
     $$('[data-jump]', el).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const t = +b.dataset.jump; if (t >= 0) go(t, true); }));
     $$('[data-wk]', el).forEach((b) => (b.onclick = () => go(idxOf(b.dataset.wk, 'wl'), true)));
     $$('[data-fly]', el).forEach((inp) => (inp.oninput = () => { DOC.fly[inp.dataset.fly] = inp.value; DOC.fly.at = Date.now(); save(); }));
     $$('[data-new]', el).forEach((b) => (b.onclick = () => newEntry(b.dataset.new, b.dataset.date)));
-    $$('[data-mood]', el).forEach((b) => (b.onclick = () => { if (!DOC.mood) DOC.mood = {}; DOC.mood[TODAY()] = { k: b.dataset.mood, at: Date.now() }; MOODOPEN = false; snd('tab'); save(); tchNote(); refresh(); }));
-    $$('[data-moodopen]', el).forEach((b) => (b.onclick = () => { MOODOPEN = true; refresh(); }));
+    $$('[data-mood]', el).forEach((b) => (b.onclick = () => {
+      if (MOODFX) return; const k = b.dataset.mood, pi = +el.dataset.pi;
+      if (!DOC.mood) DOC.mood = {}; DOC.mood[TODAY()] = { k, at: Date.now() }; snd('bubble'); save(); tchNote();
+      const fin = () => { MOODFX = false; MOODOPEN = false; refresh(); };
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return fin();
+      // 나머지 기분은 스르륵 접히고, 고른 얼굴이 통 하고 작은 픽셀이 뽀글뽀글 떠올라요 (한 번만)
+      MOODFX = true; $$('.mood-b', b.parentNode).forEach((x) => x !== b && x.classList.add('out'));
+      setTimeout(() => { fin(); const nb = $(`.slot > .page[data-pi="${pi}"] .mood > .mood-b.on`); if (nb) moodFx(nb, k); }, 150);
+    }));
+    $$('[data-moodopen]', el).forEach((b) => (b.onclick = () => { if (MOODFX) return; MOODOPEN = true; refresh(); const l = $(`.slot > .page[data-pi="${+el.dataset.pi}"] .mood-l`); if (l) { l.classList.add('in'); setTimeout(() => l.classList.remove('in'), 200); } }));
     $$('[data-edit]', el).forEach((b) => (b.onclick = () => startEdit(b.closest('[data-ent]').dataset.ent)));
     $$('[data-del]', el).forEach((b) => (b.onclick = () => askDel(b.closest('[data-ent]'))));
     $$('.cell[data-jump]', el).forEach((c) => (c.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } }));
@@ -599,8 +621,18 @@
     const ic = $('.idc', el); if (ic) bindId(ic);
     const ta = $('#ent-ta', el);
     if (ta) {
-      const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }; requestAnimationFrame(fit);
-      let t; ta.oninput = () => { fit(); const e = editing(); if (!e) return; e.text = ta.value; e.at = Date.now(); clearTimeout(t); t = setTimeout(() => { commit(); const s = $('#ent-saved'); if (s) { s.classList.add('on'); setTimeout(() => s.classList.remove('on'), 1400); } }, 400); };
+      // 칸 높이: 글이 늘 때는 늘리기만 해요 (칸을 접었다 펴면 사파리에서 쪽이 위아래로 튀어요). 줄어들 때만, 손을 멈춘 뒤에 한 번 다시 재요
+      const grow = () => { if (ta.scrollHeight > ta.clientHeight + 1) ta.style.height = ta.scrollHeight + 'px'; };
+      const refit = () => { const i = ta.closest('.in'), y = i ? i.scrollTop : 0; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; if (i && i.scrollTop !== y) i.scrollTop = y; };
+      requestAnimationFrame(refit);
+      let t, ft, len = ta.value.length;
+      ta.oninput = () => {
+        const n = ta.value.length; if (n < len) { clearTimeout(ft); ft = setTimeout(refit, 250); } else grow(); len = n;
+        const e = editing(); if (!e) return; e.text = ta.value; e.at = Date.now();
+        // 저장은 손이 멈춘 뒤에 (한글을 조합하는 중에는 미뤄요)
+        clearTimeout(t); t = setTimeout(function sv() { if (ta.isConnected && ta._comp) { t = setTimeout(sv, 300); return; } commit(); const s = TCH ? null : $('#ent-saved'); if (s) { s.classList.add('on'); setTimeout(() => s.classList.remove('on'), 1400); } }, 800);
+      };
+      ta.addEventListener('compositionstart', () => (ta._comp = true)); ta.addEventListener('compositionend', () => (ta._comp = false));
       $('[data-ok]', el).onclick = () => { snd('done'); finishEdit(); tchNote(); };
       const keep = (f) => { const tv = ta.value; f(); refresh(); const t2 = $('#ent-ta'); if (t2) t2.value = tv; };
       $('[data-addph]', el).onclick = () => pickPhoto((id, sh) => { const e = editing(); if (!e) return; keep(() => { e.text = ta.value; (e.ph = e.ph || []).push({ id, sh }); e.at = Date.now(); commit(true); }); });
@@ -621,12 +653,11 @@
     const id = box.dataset.ent, c = $('.ent-c', box); if (!c) return;
     c.innerHTML = '<div class="ask"><span>이 글을 지울까요? 지우면 되돌릴 수 없어요.</span><button type="button" class="lbtn" data-no>아니요</button><button type="button" class="lbtn dark" data-yes>지울게요</button></div>';
     c.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    $('[data-no]', c).onclick = () => { const a = $('.ask', c); if (a) { a.classList.add('out'); setTimeout(() => (c.innerHTML = ''), 200); } };
+    $('[data-no]', c).onclick = () => { c.innerHTML = ''; };
     $('[data-yes]', c).onclick = () => {
       const e = DOC.entries[id]; if (e) { dropTwins(e); delete DOC.entries[id]; DOC.gone[id] = Date.now(); save(); }
       if (EDIT && EDIT.id === id) EDIT = null;
-      box.style.height = box.offsetHeight + 'px'; box.offsetHeight; box.classList.add('out');
-      setTimeout(() => { refresh(); toast('지웠어요'); }, 380);
+      snd('peel'); refresh(); toast('지웠어요');
     };
   }
   // 쓰기: 그 날짜 페이지에 그 종류 글이 이미 있으면 새로 만들지 않고 그 글을 열어요 (같은 글이 두 개 생기지 않게)
@@ -703,7 +734,7 @@
     const r = book.getBoundingClientRect(), z = EZ(); if (e.clientY < r.top - 8 || e.clientY > r.bottom + 8) return 0;
     return e.clientX <= r.left + z ? -1 : e.clientX >= r.right - z ? 1 : 0;
   };
-  let EQ = 0;   // 넘기는 중에 또 누른 횟수 (끝나면 이어서 넘겨요)
+  let EQ = 0, HOLD = 0;   // 넘기는 중에 또 누른 횟수 (끝나면 이어서 넘겨요)
   const stage = $('#stage');
   stage.addEventListener('pointerdown', (e) => {
     const d = edgeDir(e); if (!d || busy) return;
@@ -711,6 +742,7 @@
     const c = document.createElement('div'); c.className = 'curl ' + (d > 0 ? 'r' : 'l'); pg.appendChild(c); setTimeout(() => c.remove(), 420);
   });
   stage.addEventListener('click', (e) => {
+    if (Date.now() < HOLD) return;
     const d = edgeDir(e); if (!d || (d > 0 && $('#b-next').disabled)) return;
     if (busy) { EQ = Math.max(-3, Math.min(3, EQ + d)); return; }
     $$('.curl').forEach((c) => c.remove()); step(d);
@@ -726,6 +758,12 @@
   function openTray(html, bind) { desel(); tray.innerHTML = `<div class="tray-in">${html}</div>`; tray.classList.remove('hide'); bind && bind(tray); }
   function closeTray() { tray.classList.add('hide'); }
   tray.onclick = (e) => { if (e.target === tray) closeTray(); };
+  // 아래 창이 떠 있을 때 창 바깥을 누르면 닫혀요. 그 누름은 뒤의 쪽 넘기기 · 날짜 칸 · 단추로 넘어가지 않아요
+  const trayOut = (e) => !tray.classList.contains('hide') && e.target.closest && !e.target.closest('#tray, #crop, #file, #toast');
+  let TRAYDOWN = false;
+  for (const ev of ['pointerdown', 'touchstart', 'mousedown']) document.addEventListener(ev, (e) => { if (!trayOut(e)) return; TRAYDOWN = true; e.stopPropagation(); }, true);
+  for (const ev of ['pointerup', 'touchend', 'mouseup']) document.addEventListener(ev, (e) => { if (trayOut(e)) e.stopPropagation(); }, true);
+  document.addEventListener('click', (e) => { if (trayOut(e)) { TRAYDOWN = false; e.stopPropagation(); e.preventDefault(); closeTray(); return; } if (MOODOPEN && !MOODFX && !(e.target.closest && e.target.closest('.mood'))) { MOODOPEN = false; setTimeout(() => { if ($('.mood-l') && moodOf(TODAY()) && !EDIT) refresh(); }, 0); } }, true);
   let TG = 'phrase';
   function stkTray() {
     const items = ORDER.filter((k) => STK[k].g === TG);
@@ -745,7 +783,7 @@
   // 밀어서 한 장씩
   let tx = 0, ty = 0, tOK = false;
   book.addEventListener('touchstart', (e) => { const t = e.target; tOK = e.touches.length === 1 && !(t.closest && t.closest('.stk, textarea, input, button, #tabs')); tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
-  book.addEventListener('touchend', (e) => { if (!tOK || dragging || busy || EDIT || SEL || !tray.classList.contains('hide')) return; const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return; if (dx < 0) { if (pos === 0 && !AUTH) return; step(1); } else step(-1); }, { passive: true });
+  book.addEventListener('touchend', (e) => { if (!tOK || dragging || busy || Date.now() < HOLD || EDIT || SEL || !tray.classList.contains('hide')) return; const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return; if (dx < 0) { if (pos === 0 && !AUTH) return; step(1); } else step(-1); }, { passive: true });
   addEventListener('keydown', (e) => { if (e.target.closest && e.target.closest('textarea, input')) return; if (e.key === 'ArrowRight' && (pos > 0 || AUTH)) step(1); if (e.key === 'ArrowLeft') step(-1); });
   // 키보드가 올라오면 쓰는 칸이 가려지지 않게 올리고, 내려가면 밀린 화면을 제자리로
   if (window.visualViewport) {
@@ -815,7 +853,15 @@
     if (AUTH) afterAuth();
     if (AUTH && /^go=today/.test(q)) setTimeout(() => go(idxD(TODAY()), true), 900);
     if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (e) => { if (e.data && e.data.go === 'today' && AUTH) { const t = idxD(TODAY()); if (t >= 0 && !busy) go(t, true); } });
-    if ('serviceWorker' in navigator && !LOCAL) navigator.serviceWorker.register('sw.js').catch(() => {});
+    if ('serviceWorker' in navigator && !LOCAL) {
+      // 새 버전이 올라오면 열려 있던 화면도 바로 갈아타요 (쓰는 중이면 다 쓴 뒤에). 처음 깔릴 때는 새로 고치지 않아요
+      const had = !!navigator.serviceWorker.controller; let reg = null, turned = false;
+      const turn = () => { if (turned) return; if (EDIT || busy) return setTimeout(turn, 1500); turned = true; location.reload(); };
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (had) turn(); });
+      navigator.serviceWorker.register('sw.js').then((r) => { reg = r; }).catch(() => {});
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && reg) reg.update().catch(() => {}); });
+      setInterval(() => { if (reg && document.visibilityState === 'visible') reg.update().catch(() => {}); }, 30 * 60000);
+    }
   }
   const _lu = loadUniv; loadUniv = async function () { await _lu(); buildTabs(); sync(); };
   window.__jd = { go, P: () => P, pos: () => pos, doc: () => DOC, srv: () => SRV, two: () => TWO, setFont, addStk, inst: instOpen };
