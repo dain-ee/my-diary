@@ -15,6 +15,46 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
     del(k) { try { localStorage.removeItem(k); } catch (e) {} },
   };
+
+  // 소리: 파일 없이 그 자리에서 만들어요 (걸러 낸 잡음 덩이를 짧게 겹쳐서 종이·연필 소리처럼)
+  const SOUND = (() => {
+    const nb = new WeakMap(), R = (a, b) => a + Math.random() * (b - a);
+    const noise = (c) => { let b = nb.get(c); if (!b) { b = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; nb.set(c, b); } return b; };
+    const puff = (c, out, t, o) => {
+      const s = c.createBufferSource(); s.buffer = noise(c); s.loop = true;
+      const f = c.createBiquadFilter(); f.type = o.type || 'bandpass'; f.Q.value = o.q || 0.8; f.frequency.setValueAtTime(o.f0, t); if (o.f1) f.frequency.exponentialRampToValueAtTime(o.f1, t + o.dur);
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = o.lp || 5000; lp.Q.value = 0.3;
+      const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(o.g, t + (o.att || 0.004)); g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+      s.connect(f); f.connect(lp); lp.connect(g); g.connect(out); s.start(t, Math.random() * 0.9); s.stop(t + o.dur + 0.02);
+    };
+    return {
+      // 한 장 넘길 때: 사라라락
+      flip(c, o, t) { puff(c, o, t, { f0: R(1500, 1900), f1: R(2600, 3200), q: 0.6, g: 0.5, att: 0.07, dur: 0.3, lp: 5200 }); for (let i = 0; i < 6; i++) puff(c, o, t + 0.03 + i * R(0.034, 0.046), { f0: R(2200, 3600), q: 1.4, g: R(0.2, 0.4), att: 0.003, dur: R(0.03, 0.05), lp: 5500 }); puff(c, o, t + 0.24, { type: 'lowpass', f0: 420, q: 0.5, g: 0.12, att: 0.005, dur: 0.09, lp: 900 }); },
+      // 여러 장 한꺼번에: 파라라라락
+      riffle(c, o, t) { let x = t; for (let i = 0; i < 11; i++) { puff(c, o, x, { f0: R(2000, 3400), q: 1.6, g: R(0.3, 0.5) * (0.7 + i / 22), att: 0.002, dur: R(0.028, 0.04), lp: 5600 }); x += R(0.026, 0.036) * (1 - i * 0.02); } puff(c, o, t, { f0: 1600, f1: 2600, q: 0.5, g: 0.2, att: 0.1, dur: 0.36, lp: 4500 }); puff(c, o, x + 0.01, { type: 'lowpass', f0: 380, q: 0.5, g: 0.2, att: 0.004, dur: 0.1, lp: 800 }); },
+      // 표지 열고 덮을 때: 조금 묵직하게
+      cover(c, o, t) { puff(c, o, t, { f0: 900, f1: 1500, q: 0.5, g: 0.3, att: 0.09, dur: 0.3, lp: 3200 }); puff(c, o, t + 0.2, { type: 'lowpass', f0: 220, q: 0.7, g: 0.7, att: 0.006, dur: 0.14, lp: 600 }); },
+      // 스티커 붙일 때: 톡, 그리고 살짝 누르기
+      stick(c, o, t) { puff(c, o, t, { type: 'lowpass', f0: 520, q: 0.8, g: 0.7, att: 0.002, dur: 0.07, lp: 1400 }); puff(c, o, t, { f0: R(1700, 2300), q: 2, g: 0.5, att: 0.001, dur: 0.018, lp: 4500 }); puff(c, o, t + 0.09, { type: 'lowpass', f0: 300, q: 0.6, g: 0.3, att: 0.012, dur: 0.11, lp: 800 }); },
+      // 스티커 뗄 때
+      peel(c, o, t) { puff(c, o, t, { f0: R(1100, 1400), f1: R(3200, 3900), q: 2.2, g: 0.5, att: 0.02, dur: 0.13, lp: 5200 }); for (let i = 0; i < 4; i++) puff(c, o, t + 0.02 + i * 0.024, { f0: R(2400, 3600), q: 2, g: R(0.15, 0.3), att: 0.002, dur: 0.02, lp: 5500 }); },
+      // 다 썼을 때: 펜 내려놓는 톡
+      done(c, o, t) { puff(c, o, t, { f0: R(1500, 1900), q: 3, g: 0.8, att: 0.001, dur: 0.022, lp: 4200 }); puff(c, o, t + 0.004, { type: 'lowpass', f0: 340, q: 0.8, g: 0.6, att: 0.002, dur: 0.08, lp: 900 }); puff(c, o, t + 0.06, { f0: 1300, q: 3, g: 0.3, att: 0.001, dur: 0.02, lp: 3500 }); },
+      // 인덱스 탭: 아주 작은 톡
+      tab(c, o, t) { puff(c, o, t, { f0: R(1900, 2400), q: 2.5, g: 0.4, att: 0.001, dur: 0.016, lp: 4200 }); puff(c, o, t, { type: 'lowpass', f0: 400, q: 0.6, g: 0.2, att: 0.002, dur: 0.05, lp: 900 }); },
+      // 글 적을 때: 연필 사각
+      pencil(c, o, t) { const d = R(0.09, 0.15); puff(c, o, t, { f0: R(2400, 3300), f1: R(2800, 4200), q: 1.1, g: R(0.4, 0.55), att: 0.012, dur: d, lp: 5200 }); puff(c, o, t + d * 0.3, { f0: R(3000, 4000), q: 2.5, g: 0.22, att: 0.004, dur: d * 0.4, lp: 5500 }); },
+    };
+  })();
+  window.JDSOUND = SOUND;
+  let SND = LS.get('jd:snd', 1) !== 0, AC = null; const SL = {};
+  const ac = () => { if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { AC = new C(); } catch (e) { return null; } } if (AC.state === 'suspended') { const p = AC.resume(); if (p && p.catch) p.catch(() => {}); } return AC; };
+  // 같은 소리가 너무 바짝 겹치지 않게 사이를 둬요
+  function snd(k) { if (!SND) return; const now = performance.now(), gap = { pencil: 75, flip: 150, riffle: 300, cover: 300, tab: 60 }[k] || 40; if (now - (SL[k] || 0) < gap) return; SL[k] = now; const c = ac(); if (!c) return; try { SOUND[k](c, c.destination, c.currentTime + 0.01); } catch (e) {} }
+  const sndUi = () => { const b = document.getElementById('snd'); if (b) { b.textContent = SND ? '소리 켬' : '소리 끔'; b.setAttribute('aria-pressed', SND ? 'true' : 'false'); } const q = document.getElementById('snd-set'); if (q) q.textContent = SND ? '소리 끄기' : '소리 켜기'; };
+  document.addEventListener('click', (e) => { if (!e.target.closest || !e.target.closest('#snd, #snd-set')) return; e.stopPropagation(); SND = !SND; LS.set('jd:snd', SND ? 1 : 0); sndUi(); snd('tab'); }, true);
+  document.addEventListener('input', (e) => { if (e.target.matches && e.target.matches('textarea, .idi, #note-in')) snd('pencil'); }, true);
+  sndUi();
   const pad = (n) => String(n).padStart(2, '0');
   const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const dt = (s) => new Date(s + 'T00:00:00');
@@ -278,8 +318,10 @@
   bm.onclick = (e) => { e.stopPropagation(); const t = idxD(TODAY()); bm.classList.remove('tok'); bm.offsetWidth; bm.classList.add('tok'); if (t >= 0 && !busy) go(t, true); };
   function bmSync() {
     const ti = idxD(TODAY()), v = view(pos), on = ti >= 0 && (v.L === ti || v.R === ti), left = TWO && (on ? v.L === ti : ti < Math.max(v.L, v.R));
-    bm.className = `${pos === 0 || ti < 0 ? 'hide' : ''}${on ? ' on' : ''}${left ? ' l' : ''}${bm.classList.contains('tok') ? ' tok' : ''}`;
+    $$('.page .in', book).forEach((i) => i.parentNode.classList.toggle('long', i.scrollHeight > i.clientHeight + 8));
+    bm.className = `${pos === 0 || ti < 0 ? 'hide' : ''}${on ? ' on' : ''}${$$('.page .in', book).some((i) => i.scrollTop > 4) ? ' up' : ''}${left ? ' l' : ''}${bm.classList.contains('tok') ? ' tok' : ''}`;
   }
+  book.addEventListener('scroll', (e) => { if (e.target.classList && e.target.classList.contains('in')) { e.target.parentNode.classList.toggle('long', e.target.scrollHeight > e.target.clientHeight + 8); } if (e.target.classList && e.target.classList.contains('in')) bm.classList.toggle('up', $$('.page .in', book).some((i) => i.scrollTop > 4)); }, true);
   function setBm(k) { if (!BMS.some((b) => b[0] === k)) return; BM = k; LS.set('jd:bm', k); DOC.bm = k; save(); $('img', bm).src = `assets/fly/bm_${k}.webp`; $$('[data-bm]').forEach((b) => b.classList.toggle('on', b.dataset.bm === k)); bm.classList.remove('tok'); bm.offsetWidth; bm.classList.add('tok'); }
 
   function tocHtml() {
@@ -388,6 +430,7 @@
       <div class="set rw"><div><h3>저장</h3><p id="srv-state">${srvText()}</p></div></div>
       <div class="set rw"><div><h3>알림</h3><p>${note}</p></div>${perm === 'default' || (perm === 'granted' && !PUSH) ? '<button type="button" class="lbtn sm" id="push-on">알림 켜기</button>' : ''}</div>
       ${alone ? '' : `<div class="set rw"><div><h3>앱으로 쓰기</h3><p>${ios ? '사파리 공유 단추에서 「홈 화면에 추가」를 골라요.' : '브라우저 메뉴에서 「앱 설치」를 골라요.'}</p></div></div>`}
+      <div class="set rw"><div><h3>소리</h3><p>종이 넘기는 소리, 연필 소리, 스티커 붙이는 소리가 나요.</p></div><button type="button" class="lbtn sm" id="snd-set">${SND ? '소리 끄기' : '소리 켜기'}</button></div>
       <div class="set rw"><div><h3>잠그기</h3><p>다시 열 때 코드가 필요해요. 쓴 글은 그대로예요.</p></div><button type="button" class="lbtn sm" id="lock-ask">잠그기</button><div id="lock-c"></div></div>`;
   }
 
@@ -422,7 +465,7 @@
     const W = innerWidth, H = innerHeight, two = W > H && W >= 900, tabw = W < 500 ? 24 : W < 900 ? 32 : 36, padX = W < 500 ? 6 : 18, availH = H - (W < 500 ? 22 : 40) - 66, availW = W - padX * 2 - tabw - 16;
     let pw, ph; if (two) { pw = Math.min(availW / 2, availH / 1.3); ph = Math.min(availH, pw * 1.42); } else { pw = Math.min(availW, availH / 1.25); ph = Math.min(availH, pw * (pw < 500 ? 2.3 : 1.46)); }
     pw = Math.floor(pw); ph = Math.floor(ph); const r = document.documentElement.style;
-    r.setProperty('--pw', pw + 'px'); PHONE = pw < 500; r.setProperty('--u', (PHONE ? pw / 62 : pw / 100) + 'px'); r.setProperty('--ph', ph + 'px'); r.setProperty('--bw', (two ? pw * 2 : pw) + 'px'); r.setProperty('--tabw', tabw + 'px'); book.style.marginRight = tabw + 'px';
+    r.setProperty('--pw', pw + 'px'); r.setProperty('--pwn', pw); PHONE = pw < 500; r.setProperty('--u', (PHONE ? pw / 62 : pw / 100) + 'px'); r.setProperty('--ph', ph + 'px'); r.setProperty('--bw', (two ? pw * 2 : pw) + 'px'); r.setProperty('--tabw', tabw + 'px'); book.style.marginRight = tabw + 'px';
     document.body.classList.toggle('two', two); document.body.classList.toggle('one', !two);
     if (two !== TWO) { TWO = two; if (P.length) mount(); }
   }
@@ -431,7 +474,7 @@
   function buildTabs() {
     const W = weeks(), y = new Date().getFullYear(), ms = new Set(W.filter((w) => thu(w.mon).getFullYear() === y).map((w) => thu(w.mon).getMonth()));
     let ci = 0; tabs.innerHTML = [['cover', '표지'], ['toc', '목차'], ['today', '오늘'], ['now', '주간'], ['day', '일기'], ['worry', '고민'], ['photo', '사진'], ['set', '설정']].map(([k, n]) => `<button type="button" class="cat c${ci++ % 3}" data-tab="${k}" aria-label="${{ cover: '표지로 돌아가 덮기', toc: '목차', today: '오늘 페이지', now: '이번 주 보기', day: '지난 일기 한눈에 보기', worry: '적어 둔 고민 한눈에 보기', photo: '붙인 사진', set: '설정' }[k]}">${n}</button>`).join('') + `<span class="gap"></span><button type="button" class="yr" tabindex="-1">${y}</button>` + MON.map((m, i) => `<button type="button" class="mt ${i % 2 ? 'b' : 'a'}${ms.has(i) ? '' : ' off'}" data-tab="m${i}" aria-label="${i + 1}월" ${ms.has(i) ? '' : 'disabled'}><b>${i + 1}</b><small>${m.slice(0, 3).toLowerCase()}</small></button>`).join('');
-    $$('[data-tab]', tabs).forEach((b) => (b.onclick = () => { const k = b.dataset.tab; let t = -1; if (k === 'cover') return go(0); if (k === 'toc') t = idxT('toc'); else if (k === 'today') t = idxD(TODAY()); else if (k === 'now') t = idxOf(curMon(), 'wl'); else if (k === 'day') t = idxT('dall'); else if (k === 'worry') t = idxT('wall'); else if (k === 'photo') t = idxT('photos'); else if (k === 'set') t = idxT('about'); else t = idxM(`${new Date().getFullYear()}-${pad(+k.slice(1) + 1)}`); /* 달 탭은 그 달 간지로 */ if (t >= 0) go(t, true); }));
+    $$('[data-tab]', tabs).forEach((b) => (b.onclick = () => { const k = b.dataset.tab; let t = -1; snd('tab'); if (k === 'cover') return go(0); if (k === 'toc') t = idxT('toc'); else if (k === 'today') t = idxD(TODAY()); else if (k === 'now') t = idxOf(curMon(), 'wl'); else if (k === 'day') t = idxT('dall'); else if (k === 'worry') t = idxT('wall'); else if (k === 'photo') t = idxT('photos'); else if (k === 'set') t = idxT('about'); else t = idxM(`${new Date().getFullYear()}-${pad(+k.slice(1) + 1)}`); /* 달 탭은 그 달 간지로 */ if (t >= 0) go(t, true); }));
   }
   function sync() {
     const closed = pos === 0; document.body.classList.toggle('closed', closed); bar.classList.toggle('hide', closed);
@@ -452,6 +495,7 @@
     if (EDIT) finishEdit(true);
     busy = true; desel(); closeTray();
     const fwd = t > pos, dist = TWO ? Math.abs(sp(t) - sp(pos)) : Math.abs(t - pos), n = far ? Math.min(dist, 10) : 1, thin = pos !== 0 && t !== 0, dur = thin ? (n > 1 ? 460 : 540) : n > 1 ? 540 : 700, ST = thin ? (n > 5 ? 45 : 65) : n > 5 ? 55 : 80, leaves = [];
+    snd(thin ? (n > 1 ? 'riffle' : 'flip') : 'cover');
     const face = (leaf, cls, pg) => { const f = document.createElement('div'); f.className = 'face ' + cls; f.appendChild(pg); leaf.appendChild(f); };
     // 얇은 종이 한 장(표지가 아닌 속지): ft = 넘어가는 앞면, bk = 뒷면. zf/zb = 앞면 조각과 뒷면 조각의 쌓임 순서
     const paper = (cls, i, zf, zb, ft, bk) => { const l = document.createElement('div'); l.className = 'leaf pp ' + cls; l.style.setProperty('--d', i * ST + 'ms'); l.style.setProperty('--dur', dur + 'ms'); l.innerHTML = `<div class="pp-m" style="z-index:${zf}"><div class="pp-k"><div class="pp-o"></div></div><i class="pp-s"></i></div><div class="pp-m" style="z-index:${zb}"><div class="pp-k"><div class="pp-b"><i class="pp-e"></i></div><i class="pp-g"></i></div></div>`; $('.pp-o', l).appendChild(ft); $('.pp-b', l).appendChild(bk); $('.pp-b', l).insertAdjacentHTML('beforeend', '<i class="pp-w"></i>'); leaves.push(l); book.appendChild(l); };
@@ -504,7 +548,7 @@
     if (ta) {
       const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }; requestAnimationFrame(fit);
       let t; ta.oninput = () => { fit(); const e = editing(); if (!e) return; e.text = ta.value; e.at = Date.now(); clearTimeout(t); t = setTimeout(() => { commit(); const s = $('#ent-saved'); if (s) { s.classList.add('on'); setTimeout(() => s.classList.remove('on'), 1400); } }, 400); };
-      $('[data-ok]', el).onclick = () => finishEdit();
+      $('[data-ok]', el).onclick = () => { snd('done'); finishEdit(); };
       const keep = (f) => { const tv = ta.value; f(); refresh(); const t2 = $('#ent-ta'); if (t2) t2.value = tv; };
       $('[data-addph]', el).onclick = () => pickPhoto((id, sh) => { const e = editing(); if (!e) return; keep(() => { e.text = ta.value; (e.ph = e.ph || []).push({ id, sh }); e.at = Date.now(); commit(true); }); });
       $$('[data-phx]', el).forEach((b) => (b.onclick = () => { const e = editing(); if (!e) return; keep(() => { e.ph = entPh(e).filter((x) => x.id !== b.dataset.phx); e.at = Date.now(); commit(true); }); }));
@@ -587,7 +631,7 @@
   function desel() { if (SEL) SEL.el.classList.remove('sel'); SEL = null; tool.classList.add('hide'); }
   tool.onclick = (e) => {
     const b = e.target.closest('[data-t]'); if (!b || !SEL) return; const { el, pi } = SEL, id = el.dataset.sid, t = b.dataset.t;
-    if (t === 'rm') { let old; stkMut(pi, (L) => { const i = L.findIndex((q) => q.id === id); if (i >= 0) old = L.splice(i, 1)[0]; }); desel(); el.style.transition = 'opacity .25s, scale .25s'; el.style.opacity = 0; el.style.scale = 0.5; setTimeout(() => el.remove(), 260); toast('뗐어요', () => { if (!old) return; stkMut(pi, (L) => L.push(old)); refresh(); }); return; }
+    if (t === 'rm') { let old; stkMut(pi, (L) => { const i = L.findIndex((q) => q.id === id); if (i >= 0) old = L.splice(i, 1)[0]; }); desel(); el.style.transition = 'opacity .25s, scale .25s'; el.style.opacity = 0; el.style.scale = 0.5; setTimeout(() => el.remove(), 260); snd('peel'); toast('뗐어요', () => { if (!old) return; stkMut(pi, (L) => L.push(old)); refresh(); }); return; }
     if (t === 'tx') { const s = stkList(P[pi]).find((q) => q.id === id); tool.innerHTML = `<input id="note-in" maxlength="60" value="${esc((s && s.t) || '')}" placeholder="쪽지에 적을 말"><button type="button" data-t="txok">됐어요</button>`; const inp = $('#note-in'); inp.focus(); inp.oninput = () => { stkMut(pi, (L) => { const q = L.find((z) => z.id === id); if (q) q.t = inp.value; }); const h = $('.hand', el); if (h) h.textContent = inp.value; }; return; }
     if (t === 'txok') { desel(); return; }
     stkMut(pi, (L) => { const s = L.find((q) => q.id === id); if (!s) return; if (t === 'rl') s.r = (s.r || 0) - 10; if (t === 'rr') s.r = (s.r || 0) + 10; if (t === 'sm') s.s = Math.max(0.45, (s.s || 1) / 1.15); if (t === 'lg') s.s = Math.min(3, (s.s || 1) * 1.15); el.style.transition = 'transform .25s'; el.style.setProperty('--r', s.r + 'deg'); el.style.setProperty('--s', s.s || 1); });
@@ -620,7 +664,7 @@
   });
   function addStk(k, extra) {
     const v = view(pos); let pi = [v.L, v.R].includes(STKPAGE) ? STKPAGE : v.R >= 0 ? v.R : v.L; if (P[pi].t === 'cover') return;
-    const pg = $(`.slot > .page[data-pi="${pi}"]`), sc = $('.in', pg); if (!sc) return; const pw = pg.clientWidth, y = (sc.scrollTop + sc.clientHeight * (0.3 + Math.random() * 0.3)) / pw, s = { id: 's' + uid(), k, x: +(0.5 + (Math.random() - 0.5) * 0.4).toFixed(3), y: +y.toFixed(4), r: 0, s: 1, ...(extra || {}) };
+    const pg = $(`.slot > .page[data-pi="${pi}"]`), sc = $('.in', pg); if (!sc) return; snd('stick'); const pw = pg.clientWidth, y = (sc.scrollTop + sc.clientHeight * (0.3 + Math.random() * 0.3)) / pw, s = { id: 's' + uid(), k, x: +(0.5 + (Math.random() - 0.5) * 0.4).toFixed(3), y: +y.toFixed(4), r: 0, s: 1, ...(extra || {}) };
     stkMut(pi, (L) => L.push(s)); const tmp = document.createElement('div'); tmp.innerHTML = stkHtml(s, 'new'); const el = tmp.firstElementChild; $('.sheet', pg).appendChild(el); fillPhotos(el); bindStk(el, pi); closeTray();
     if (k === 'note') setTimeout(() => { select(el, pi); const b = $('[data-t="tx"]', tool); if (b) b.click(); }, 350);
   }

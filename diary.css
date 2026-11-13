@@ -820,3 +820,25 @@ body.closed #here { opacity: 0; }
 .curl { width: calc(var(--u) * 5); height: calc(var(--u) * 5); animation: curlTap .12s ease-out both; }
 @keyframes curlTap { from { transform: scale(.2); opacity: .4; } to { transform: scale(1); opacity: 1; } } .curl.r { transform-origin: 100% 100%; } .curl.l { transform-origin: 0 100%; }
 #stage { cursor: default; touch-action: manipulation; }
+
+/* 마무리: 쓰는 중에는 쪽 바닥 글씨를 숨기고, 책갈피는 내용이 올라오면 책 위로만, 확인 줄·쪽지는 판 없이 */
+.page:has(.ent.editing) .pglab { visibility: hidden; }
+.sheet:has(.ent.editing) { padding-bottom: calc(var(--u) * 8); }
+#bm.up i, #bm.on.up i { clip-path: inset(0 0 calc(100% - var(--bmup)) 0); }
+.ask { background: none; padding-left: 0; padding-right: 0; color: var(--ink); }
+.ask .lbtn { height: calc(var(--u) * 4.6); padding: 0 calc(var(--u) * 1.6); font-size: max(10px, calc(var(--u) * 1.9)); box-shadow: none; }
+.pr-note { background: #fff; padding: 7% 8%; } .pr-note::before { display: none; }
+.cv-lace { padding-top: 14.24%; background-size: 25% auto; } .cv-lace.b { bottom: -1px; transform: none; }
+@media (max-width: 499px) {
+  .page.cover { background-size: 112% auto !important; }
+  .cv-lace { padding-top: 0; height: calc(var(--ph) * .095); background-size: auto 100%; }
+  .idc { --is: calc(var(--pwn) * .0015786); }
+  .idr { min-height: 0; overflow: hidden; }
+  .idi { flex: none; width: calc(100% / var(--is)); font-size: 16px; transform: scale(var(--is)); transform-origin: 0 100%; padding-bottom: calc(var(--k) * .7 / var(--is)); background: radial-gradient(circle, #8a8a8a 0 calc(var(--k) * .22 / var(--is)), transparent calc(var(--k) * .26 / var(--is))) 0 100% / calc(var(--k) * 1.1 / var(--is)) calc(var(--k) * .6 / var(--is)) repeat-x; }
+  .idr.ids .idi { --is: calc(var(--pwn) * .0011431); flex: none; width: calc(70% / var(--is)); font-size: 16px; }
+}
+
+/* 소리 켜기 끄기 (위 왼쪽 작은 글씨), 내용이 긴 쪽은 바닥 글씨를 숨겨 겹치지 않게 */
+#snd { position: absolute; left: 6px; top: -4px; z-index: 6; padding: 8px 8px; background: none; font: 400 11px/1 var(--f-px); letter-spacing: .04em; color: var(--gr); }
+#snd[aria-pressed="false"] { opacity: .55; text-decoration: line-through; }
+.page.long .pglab { visibility: hidden; }
