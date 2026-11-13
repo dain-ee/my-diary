@@ -55,5 +55,7 @@
 | assets/fly/pattern.webp | source/gen/w2_pattern.png | 줄여 씀 |
 | assets/fly/bm_pk.webp, bm_sk.webp, bm_dot.webp | source/gen/w2_bookmark.png | 녹색 배경을 지우고 색·무늬만 바꿈 |
 
-쓰지 않은 그림: `source/gen/w2_idcard_sky.png`.
+| assets/fly/girl.webp | source/gen/girl_a.png | 흰 여백을 잘라 줄임. 카드 사진 칸의 기본 그림 |
+
+쓰지 않은 그림: `source/gen/w2_idcard_sky.png`, `source/gen/girl_b.png`, `source/gen/girl_c.png`.
 스티커 묶음 「낙서」「파스텔」의 그림은 모두 코드(SVG·CSS)로 직접 그렸어요.

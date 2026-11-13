@@ -227,53 +227,27 @@
     return `<div class="cv">
       ${!AUTH ? `<form class="cv-code" id="code-f"><p>주인만 열 수 있어요. 내 코드를 적어 주세요</p><input id="code-in" inputmode="text" autocomplete="off" autocapitalize="off" maxlength="24" aria-label="내 코드"><button type="submit">열기</button><p class="err" id="code-err"></p></form>` : '<div class="cv-open">TAP TO OPEN</div>'}</div>`;
   }
-  // ── 첫 장 (W2): 가로 ID 카드를 시계 방향으로 90도 돌려 한 쪽 가득. 카드 바탕은 그림(assets/fly/idcard_*.webp), 글자·입력 칸·사진은 그 위에 % 자리로 얹어요 ──
-  const FACE = '<svg class="idc-face" viewBox="0 0 60 78" aria-hidden="true"><path class="fa" d="M30 18.5c11.8-.4 20.6 8 20.3 18.8-.3 10.6-8.8 18.3-20.5 18.2C18.3 55.4 9.8 47.7 9.700 37.1 9.600 26.600 18.4 18.9 30 18.5Z"/><path class="fl" d="M27.5 18.7c-.8-3.6.4-6.4 3.2-7.8M30.7 18.5c1.4-2.8 3.6-4.2 6.600-4"/><circle class="fe" cx="22.3" cy="37.8" r="1.9"/><circle class="fe" cx="37.9" cy="37.600" r="1.9"/><ellipse class="fb" cx="17.3" cy="43.8" rx="3.5" ry="2.1"/><ellipse class="fb" cx="42.9" cy="43.600" rx="3.5" ry="2.1"/><path class="fl" d="M27.600 44.600c1.600 1.5 3.5 1.5 5 0"/><path class="fl" d="M22 62.5c5.4 2.3 10.8 2.3 16.2 0"/></svg>'.replace(/(\.\d)00/g, '$1');
+  // ── 첫 장: 가로 ID 카드를 글씨가 똑바로 읽히는 방향 그대로 놓아요. 카드 바탕은 그림(assets/fly/idcard_*.webp), 글자·입력 칸·사진은 그 위에 % 자리로 얹어요 ──
   const idTone = () => (DOC.fly.tone === 'sk' ? 'sk' : 'pk');
   function flyHtml() {
     const f = DOC.fly, tone = idTone();
-    const row = (lab, key, max, al, cls) => `<label class="idr ${cls || ''}">${lab ? `<span>${lab}</span>` : ''}<input class="idi" data-fly="${key}" value="${esc(f[key] || '')}" maxlength="${max}" aria-label="${al || lab}" readonly tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false"></label>`;
-    return `<div class="fly"><div class="idc t-${tone}" role="button" tabindex="0" aria-label="ID 카드 쓰기. 누르면 카드가 바로 서요">
-      <div class="idc-pi" data-idph>${f.photo ? `<img data-ph="${esc(f.photo)}" alt="내 사진" draggable="false">` : FACE}</div>
+    const row = (lab, key, max, al, cls) => `<label class="idr ${cls || ''}">${lab ? `<span>${lab}</span>` : ''}<input class="idi" data-fly="${key}" value="${esc(f[key] || '')}" maxlength="${max}" aria-label="${al || lab}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>`;
+    return `<div class="fly"><div class="idc t-${tone}">
+      <button type="button" class="idc-pi" data-idph aria-label="사진 넣기">${f.photo ? `<img data-ph="${esc(f.photo)}" alt="내 사진" draggable="false">` : '<img class="idc-girl" src="assets/fly/girl.webp" alt="" draggable="false">'}</button>
       <img class="idc-bg" src="assets/fly/idcard_${tone}.webp" alt="" draggable="false">
       <div class="idc-f"><div class="idc-t"><span>ID CARD</span></div>
         ${row('Name :', 'name', 20)}${row('Birth Day :', 'birth', 20)}${row('Group :', 'group', 24)}${row('Info :', 'vow', 40)}${row('', 'info', 40, 'Info 둘째 줄', 'in2')}
         ${row('since', 'since', 20, '시작한 날', 'ids')}</div>
-</div><span class="idc-tip">카드를 누르면 바로 서요</span></div>`;
+      <div class="idc-opt"><span class="idov-tone" role="group" aria-label="카드 색">${[['pk', '분홍'], ['sk', '하늘']].map(([k, n]) => `<button type="button" data-tone="${k}" class="${tone === k ? 'on' : ''}" aria-label="${n} 카드"></button>`).join('')}</span>${f.photo ? '<button type="button" class="idc-phx" data-phx>사진 빼기</button>' : ''}</div>
+</div></div>`;
   }
-  // 카드를 누르면 바로 서서(회전 0) 화면 가운데로 커져요. 바깥이나 「다 썼어요」를 누르면 다시 돌아가 제자리로
-  let IDED = null;
   function bindId(card) {
-    card.onclick = (e) => {
-      if (IDED) { e.stopPropagation(); if (e.target.closest('[data-idph]')) idPhoto(card); return; }
-      const pg = card.closest('.page'), r = pg && pg.getBoundingClientRect(), x = r ? (e.clientX - r.left) / r.width : 0.5; if (x > 5 / 6 || (!TWO && x < 1 / 6)) return;   // 쪽 가장자리는 넘기는 자리로 남겨 둬요
-      e.stopPropagation(); if (busy || dragging || SEL) return; idOpen(card);
-    };
-    card.onkeydown = (e) => { if (!IDED && (e.key === 'Enter' || e.key === ' ') && e.target === card) { e.preventDefault(); idOpen(card); } };
+    card.classList.add('seen-later'); setTimeout(() => card.classList.add('seen'), 1200);
+    card.onclick = (e) => e.stopPropagation();   // 카드 위를 눌러도 쪽이 넘어가지 않게
+    const pi = $('[data-idph]', card); if (pi) pi.onclick = () => { if (busy || dragging) return; pickPhoto((id) => { DOC.fly.photo = id; DOC.fly.at = Date.now(); save(); refresh(); }); };
+    $$('[data-tone]', card).forEach((b) => (b.onclick = () => { DOC.fly.tone = b.dataset.tone; DOC.fly.at = Date.now(); save(); refresh(); }));
+    const px = $('[data-phx]', card); if (px) px.onclick = () => { delete DOC.fly.photo; DOC.fly.at = Date.now(); save(); refresh(); };
   }
-  const idFrom = (host, card) => { const r = host.getBoundingClientRect(); return `translate(${(r.left + r.width / 2 - card.offsetWidth / 2).toFixed(1)}px,${(r.top + r.height / 2 - card.offsetHeight / 2).toFixed(1)}px) rotate(90deg)`; };
-  function idOpen(card) {
-    const host = card.parentElement, ov = document.createElement('div'), cw = card.offsetWidth, ch = card.offsetHeight; ov.id = 'idov';
-    ov.innerHTML = `<div class="idov-bar"><span class="idov-tone" role="group" aria-label="카드 색">${[['pk', '분홍'], ['sk', '하늘']].map(([k, n]) => `<button type="button" data-tone="${k}" class="${idTone() === k ? 'on' : ''}" aria-label="${n} 카드"></button>`).join('')}</span><button type="button" class="idov-x" data-phx hidden>사진 빼기</button><button type="button" class="idov-ok">다 썼어요</button></div>`;
-    $('#app').appendChild(ov); card.classList.add('seen'); card.style.transform = idFrom(host, card); card.classList.add('ed'); ov.insertBefore(card, ov.firstChild); document.body.classList.add('ided');
-    const s = Math.min((innerWidth - 24) / cw, (innerHeight - 120) / ch, 1.3), to = `translate(${((innerWidth - cw) / 2).toFixed(1)}px,${Math.max(8 - ch * (1 - s) / 2, (innerHeight - 70) * 0.46 - ch / 2).toFixed(1)}px) rotate(0deg) scale(${s.toFixed(3)})`;
-    card.offsetWidth; card.style.transform = to; ov.classList.add('on');
-    $$('.idi', card).forEach((i) => { i.readOnly = false; i.tabIndex = 0; });
-    const px = $('[data-phx]', ov); px.hidden = !DOC.fly.photo;
-    px.onclick = () => { delete DOC.fly.photo; DOC.fly.at = Date.now(); save(); $('.idc-pi', card).innerHTML = FACE; px.hidden = true; };
-    $$('[data-tone]', ov).forEach((b) => (b.onclick = () => { const k = b.dataset.tone; DOC.fly.tone = k; DOC.fly.at = Date.now(); save(); card.classList.toggle('t-sk', k === 'sk'); card.classList.toggle('t-pk', k !== 'sk'); $('.idc-bg', card).src = `assets/fly/idcard_${idTone()}.webp`; $$('[data-tone]', ov).forEach((x) => x.classList.toggle('on', x === b)); }));
-    $('.idov-ok', ov).onclick = idClose; ov.onclick = (e) => { if (e.target === ov) idClose(); };
-    IDED = { card, host, ov };
-  }
-  function idClose() {
-    const E = IDED; if (!E || E.out) return; E.out = true; const { card, host, ov } = E; if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    $$('.idi', card).forEach((i) => { i.readOnly = true; i.tabIndex = -1; });
-    const live = host.isConnected; ov.classList.remove('on'); if (live) card.style.transform = idFrom(host, card); else card.style.opacity = 0;
-    setTimeout(() => { card.classList.remove('ed'); card.style.transform = ''; if (live) host.appendChild(card); ov.remove(); document.body.classList.remove('ided'); IDED = null; if (!live) refresh(); }, 440);
-  }
-  function idPhoto(card) { pickPhoto((id) => { DOC.fly.photo = id; DOC.fly.at = Date.now(); save(); const pi = $('.idc-pi', card); pi.innerHTML = `<img data-ph="${esc(id)}" alt="내 사진" draggable="false">`; fillPhotos(pi); const px = IDED && $('[data-phx]', IDED.ov); if (px) px.hidden = false; }); }
-  addEventListener('keydown', (e) => { if (IDED && e.key === 'Escape') idClose(); });
-  addEventListener('resize', () => { if (IDED && !/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) idClose(); });
 
   // 달 찾기 (목차 옆 쪽) · 달 간지 (왼쪽 색 띠 + 달 이름, 오른쪽 달력)
   function miHtml() {
@@ -701,7 +675,7 @@
     applyFont(); LS.del('jd:weeks');   // 예전 주 단위 저장 칸은 더 쓰지 않아요 (날짜 단위 jd:days 로 바뀜)
     if (MOCK) AUTH = { who: CFG.owner, code: '' };
     if (!AUTH) { const u = LS.get('mallang-univ:v1', null); if (u && u.who === CFG.owner && (u.role || 'student') === 'student' && u.syncKey) { AUTH = { who: u.who, code: u.syncKey }; LS.set('jd:auth', AUTH); } }   // 같은 브라우저에서 말랑대학을 쓰고 있으면 그대로 열려요
-    if (!DOC.fly.since) { const d = new Date(); DOC.fly.since = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`; }
+    if (!DOC.fly.since) { let s0 = LS.get('jd:since', ''); if (!s0) { const d = new Date(); s0 = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`; LS.set('jd:since', s0); } DOC.fly.since = s0; }   // 처음 연 날을 한 번만 적어 두고 그대로 써요 (카드에서 눌러 고칠 수 있어요)
     buildPages(); pos = 0; TWO = null; layout(); buildTabs(); sync();
     const q = location.search.replace(/^\?/, '').split('&')[0];
     if (!AUTH && q && !/^(mock|go)(=|$)/.test(q)) { history.replaceState(null, '', location.pathname); await login(q); }
