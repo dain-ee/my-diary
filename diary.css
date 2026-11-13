@@ -902,3 +902,45 @@ textarea, input { -webkit-user-select: text; user-select: text; -webkit-touch-ca
 .mdfx svg.g { fill: var(--gr); }
 @keyframes mdup { 0% { opacity: 1; transform: translate(0, 0); } 35% { opacity: 1; transform: translate(calc(var(--x) * .4 + var(--w)), calc(var(--y) * .4)); } 70% { opacity: 1; transform: translate(calc(var(--x) * .8 - var(--w)), calc(var(--y) * .75)); } 100% { opacity: 0; transform: translate(var(--x), var(--y)); } }
 @media (prefers-reduced-motion: reduce) { .mood-b { transition: none; } .mood-l.in, .mood-b.pop svg, .mdfx svg { animation: none; } }
+
+/* 쪽 폭이 좁을 때(펼친 접는 폰의 두 쪽, 폰 가로)에도 폰 배치를 그대로 써요: 위의 max-width 499px 규칙과 같은 내용 */
+@media (min-width: 500px) {
+  body.narrow #tabs { --tabx: 5px; }
+  body.narrow #tabs button.on { width: calc(100% + 4px); }
+  body.narrow #tabs button { border-radius: 0 7px 7px 0; }
+  body.narrow #bm { --bmup: 12px; left: calc(var(--bw) - var(--pw) * .1 - var(--bmw) / 2 - 8px); }
+  body.narrow #bm.on i { clip-path: inset(0 0 calc(100% - var(--bmup) - var(--u) * 3.4) 0 round 0 0 3px 3px); }
+  body.narrow .toc-h { flex-direction: column; align-items: flex-start; gap: 2px; }
+  body.narrow .toc-h .lab { white-space: normal; }
+  body.narrow .ym-w { font-size: 9px; letter-spacing: -.06em; }
+  body.narrow .toc-l button span { white-space: nowrap; font-size: 11px; }
+  body.narrow .cells-h { flex-wrap: nowrap; }
+  body.narrow .cells-h .cap { white-space: nowrap; }
+  body.narrow .cells-h .lab { display: none; }
+  body.narrow .toc-l small { white-space: nowrap; }
+  body.narrow .toc-l { grid-template-columns: 1fr; }
+  body.narrow .toc-l { padding-bottom: calc(var(--u) * 5); }
+  body.narrow .page.cover { background-size: 112% auto !important; }
+  body.narrow .cv-lace { padding-top: 0; height: calc(var(--ph) * .095); background-size: auto 100%; }
+  body.narrow .idc { --is: calc(var(--pwn) * .0015786); }
+  body.narrow .idr { min-height: 0; overflow: hidden; }
+  body.narrow .idi { flex: none; width: calc(100% / var(--is)); font-size: 16px; transform: scale(var(--is)); transform-origin: 0 100%; padding-bottom: calc(var(--k) * .7 / var(--is)); background: radial-gradient(circle, #8a8a8a 0 calc(var(--k) * .22 / var(--is)), transparent calc(var(--k) * .26 / var(--is))) 0 100% / calc(var(--k) * 1.1 / var(--is)) calc(var(--k) * .6 / var(--is)) repeat-x; }
+  body.narrow .idr.ids .idi { --is: calc(var(--pwn) * .0011431); flex: none; width: calc(70% / var(--is)); font-size: 16px; }
+  body.narrow .cv-code { top: 67.5%; gap: 6px; }
+  body.narrow .cv-code p, body.narrow .cv-code .err { font-size: 10px; }
+  body.narrow .ent textarea { font-size: max(16px, var(--hw)); }
+  body.narrow .mood-l { grid-template-columns: repeat(4, 1fr); }
+  body.narrow .mood-b { min-height: 44px; }
+}
+/* 높이가 낮은 화면: 표지는 비율을 지킨 채 줄여서 보여요 */
+body.low .page.cover { --ph: calc(var(--pw) * var(--cvr)); inset: auto; left: 0; top: 50%; width: var(--pw); height: var(--ph); transform: translateY(-50%) scale(var(--cvs)); transform-origin: 50% 50%; }
+/* 높이가 낮은 화면: 달 탭은 접고(목차에서 가요) 여덟 탭만 읽히는 크기로 */
+body.low #tabs .mt, body.low #tabs .yr, body.low #tabs .gap { display: none; }
+/* 쓰기 칸은 두 줄 높이로 열리고 글이 늘 때만 커져요 */
+.ent textarea { min-height: 0; }
+.sheet:has(.ent.editing) { padding-bottom: calc(var(--u) * 3); }
+.wlock { color: var(--gr2); }
+/* 선생님 화면: 사진은 잠겨 있어서 자리만 보여요 */
+body.tch .pc-i { position: relative; background: #e9e9e9; }
+body.tch .pc-i:has(img:not([src]))::after { content: "사진"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--gr2); font: 400 max(10px, calc(var(--u) * 1.8)) / 1 var(--f-px); }
+body.tch .pc-i img:not([src]) { visibility: hidden; }

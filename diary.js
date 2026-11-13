@@ -10,6 +10,7 @@
   const CFG = window.DIARY_CFG || {}, STK = window.STK, ORDER = window.STK_ORDER;
   const $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => [...(el || document).querySelectorAll(s)];
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let TKEY = '';      // 선생님 화면에서 공부 기록을 읽을 때만 쓰는 열쇠 (메모리에만 두고 어디에도 적지 않아요)
   let TCH = false;   // 선생님 화면: 아무것도 저장하지 않고 메모리에서만 움직여요 (소리 켜기 끄기만 이 기기에 남겨요)
   const LS = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -143,10 +144,33 @@
   function pushSoon() { clearTimeout(pushT); pushT = setTimeout(pushNow, 1500); }
   async function pushNow() {
     if (TCH || SRV !== 'on' || !AUTH || !AUTH.code) return;
-    try { await rpc('diary_put', { p_student: AUTH.who, p_code: AUTH.code, p_doc: await enc(JSON.stringify(DOC)), p_at: DOC.at, p_push: doneDay() ? { ...(PUSH || {}), _d: doneDay() } : PUSH || {} }); } catch (e) { SRV = 'err'; }
+    const body = { p_student: AUTH.who, p_code: AUTH.code, p_doc: await enc(JSON.stringify(DOC)), p_at: DOC.at, p_push: doneDay() ? { ...(PUSH || {}), _d: doneDay() } : PUSH || {} };
+    // 선생님이 볼 수 있는 몫(고민을 뺀 사본)을 함께 올려요. 그 저장이 안 되면 잠근 글만이라도 예전 길로 올려요
+    try { await rpc('diary_put2', { ...body, p_pub: pubDoc() }); } catch (e) { try { await rpc('diary_put', body); } catch (e2) { SRV = 'err'; } }
+  }
+  // 선생님이 볼 수 있는 몫: 일기 글 · 스티커 · 기분 · ID 카드 글자. 고민 글과 고민 모아 보기 쪽의 스티커, 사진 그림은 넣지 않아요 (사진은 자리만)
+  function pubDoc() {
+    const entries = {}; for (const [id, e] of Object.entries(DOC.entries)) { if (!e || e.kind !== 'day') continue; entries[id] = { id: e.id, date: e.date, kind: 'day', text: String(e.text || ''), c: e.c, at: e.at, ph: (e.ph || []).length ? e.ph : undefined }; }
+    const stk = {}; for (const [k, v] of Object.entries(DOC.stk || {})) if (k !== 'wall' && v) stk[k] = v;
+    const fly = { ...(DOC.fly || {}) }; delete fly.photo;
+    return { v: 1, entries, stk, fly, mood: DOC.mood || {}, at: DOC.at };
+  }
+  // 선생님 화면: 정윤의 일기 · 스티커 · 기분을 읽기만 해요. 고민은 서버가 돌려주지 않아요
+  let TPUB = 'wait';
+  async function tchPull() {
+    if (!TCH || !TKEY) { TPUB = 'none'; return; }
+    try {
+      const r = await rpc('diary_get_t', { p_student: CFG.owner, p_code: TKEY }), q = r && r.pub;
+      if (q && typeof q === 'object' && q.entries) {
+        const ent = {}; for (const [id, e] of Object.entries(q.entries || {})) if (e && e.kind === 'day') ent[id] = e;   // 혹시 섞여 와도 고민은 화면에 올리지 않아요
+        DOC = { v: 2, entries: ent, stk: q.stk || {}, gone: {}, fly: q.fly || {}, mood: q.mood || {}, at: q.at || 0 }; TPUB = 'on';
+      } else TPUB = 'none';
+    } catch (e) { TPUB = 'err'; }
+    if (!DOC.fly.since) DOC.fly.since = '';
+    buildPages(); buildTabs(); refresh();
   }
   function save() { DOC.at = Date.now(); if (TCH) return; if (!LS.set('jd:doc', DOC)) toast('저장 칸이 꽉 찼어요. 사진을 조금 지워 주세요'); pushSoon(); }
-  const srvText = () => ({ on: '이 기기와 서버 두 곳에 잠가서 저장하고 있어요', none: '지금은 이 기기에만 저장돼요', err: '서버에 닿지 않아서 이 기기에만 저장했어요. 다음에 열 때 다시 올려요', wait: '저장 칸을 확인하고 있어요', mock: '시험 화면이라 이 기기에만 저장돼요', tch: '선생님 화면이라 저장되지 않아요' }[SRV]);
+  const srvText = () => ({ on: '이 기기와 서버 두 곳에 저장하고 있어요. 고민은 잠가서 나만 열 수 있어요', none: '지금은 이 기기에만 저장돼요', err: '서버에 닿지 않아서 이 기기에만 저장했어요. 다음에 열 때 다시 올려요', wait: '저장 칸을 확인하고 있어요', mock: '시험 화면이라 이 기기에만 저장돼요', tch: '선생님 화면이라 저장되지 않아요' }[SRV]);
 
   // ── 말랑대학 기록 → 날마다 한 것 (읽기만) ──
   // 말랑대학 「시간표」(이번 주 모두) 화면과 같은 기록을 같은 규칙으로 읽어요 (univ app.js srBlocks · srTime):
@@ -212,15 +236,14 @@
     o.top = Object.entries(t).sort((a, b) => b[1] - a[1]).slice(0, 4); return o;
   }
   // 시험 화면(?mock, 내 컴퓨터에서만)에서 오늘 칸이 비어 보이지 않게 예시 기록을 얹어요. 배포된 화면에서는 돌지 않아요
-  function mockFill(d) {
-    const t0 = dt(TODAY()).getTime(); d.slog = d.slog || {};
-    [[7, 10, 45, '수학', '마더텅 함수: 75~102번'], [8, 5, 30, '영어', '영어 단어 수행 DAY38~50'], [9, 0, 50, '국어', '국어 문학 기출 3지문'], [13, 20, 40, '과학', '통합과학 오답 정리'], [16, 30, 55, '수학', '마더텅 함수: 103~120번'], [19, 40, 35, '영어', '올림포스 지문 2개'], [21, 0, 40, '사회', '한국사 근현대 정리']].forEach(([h, m, n, subj, ti]) => { const s = t0 + (h * 60 + m) * 60000, e = s + n * 60000; d.slog['w' + s] = { s, e, subj, ti, k: 'w', at: e }; });
-    return d;
-  }
+  const SAMPLE = [[7, 10, 45, '수학', '마더텅 함수: 75~102번'], [8, 5, 30, '영어', '영어 단어 수행 DAY38~50'], [9, 0, 50, '국어', '국어 문학 기출 3지문'], [13, 20, 40, '과학', '통합과학 오답 정리'], [16, 30, 55, '수학', '마더텅 함수: 103~120번'], [19, 40, 35, '영어', '올림포스 지문 2개'], [21, 0, 40, '사회', '한국사 근현대 정리']];
+  const sampleAdd = (d, back, rows) => { const t0 = dt(addD(TODAY(), -back)).getTime(); d.slog = d.slog || {}; rows.forEach(([h, m, n, subj, ti]) => { const s = t0 + (h * 60 + m) * 60000, e = s + n * 60000; d.slog['w' + s] = { s, e, subj, ti, k: 'w', at: e }; }); return d; };
+  function mockFill(d) { return sampleAdd(d, 0, SAMPLE); }
   async function loadUniv() {
     try {
       let d;
       if (MOCK) d = mockFill(await (await fetch('_mock.json')).json());
+      else if (TCH && TKEY) d = await rpc('univ_get', { p_student: CFG.owner, p_code: TKEY });   // 선생님 화면: 말랑대학 선생님 화면과 같은 길로 공부 기록만 읽어요 (읽기만, 이 기기에 쌓아 두지도 않아요)
       else if (!TCH && AUTH && AUTH.code) d = await rpc('univ_get', { p_student: AUTH.who, p_code: AUTH.code });
       if (!d) return;
       const C = computeDays(d);
@@ -266,6 +289,8 @@
   function dayEntries(date) { const L = entries().filter((e) => e.date === date); if (EDIT && EDIT.draft && EDIT.draft.date === date && !L.includes(EDIT.draft)) L.push(EDIT.draft); return L.sort((a, b) => (a.c || 0) - (b.c || 0)); }
   const entPh = (e) => (e.ph || []).map((x) => (typeof x === 'string' ? { id: x, sh: 'pol' } : x));
 
+  const WLOCK = `고민은 ${CFG.owner}만 볼 수 있어요`;
+  const TNONE = () => (TPUB === 'wait' ? '불러오고 있어요.' : TPUB === 'err' ? '지금은 불러오지 못했어요.' : `${CFG.owner}이 다이어리를 한 번 열면 여기 보여요.`);
   const LOCK = '<svg viewBox="0 0 10 12"><path d="M2.5 5V3.5a2.5 2.5 0 0 1 5 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="5" width="8" height="6.5" rx="1.5" fill="currentColor"/></svg>';
   const CLIP = "";
   setTimeout(() => document.body.classList.remove('cv-in'), 3200);   // 표지가 처음 나타날 때만 움직여요
@@ -382,9 +407,9 @@
     const ed = EDIT && EDIT.id === e.id, wr = isW(e);
     const ph = entPh(e).map((x, n) => `<div class="pc sh-${esc(x.sh || 'pol')}" style="--r:${[-3, 2, -1.5][n % 3]}deg"><div class="pc-i"><img data-ph="${esc(x.id)}" alt="" draggable="false"></div>${ed ? `<button type="button" class="x" data-phx="${esc(x.id)}" aria-label="사진 떼기">x</button>` : ''}</div>`).join('');
     return `<div class="ent ${ed ? 'editing' : ''}" data-ent="${esc(e.id)}">
-      ${ed ? `<textarea id="ent-ta" placeholder="${wr ? '마음에 걸리는 걸 그대로 적어도 돼요. 여긴 나만 보는 곳이에요' : '있었던 일, 기분, 아무 말이나'}">${esc(e.text || '')}</textarea>` : `<div class="ent-t hand">${esc(e.text || '')}</div>`}
+      ${ed ? `<textarea id="ent-ta" rows="2" placeholder="${wr ? '마음에 걸리는 걸 그대로 적어도 돼요. 여긴 나만 보는 곳이에요' : '있었던 일, 기분, 아무 말이나'}">${esc(e.text || '')}</textarea>` : `<div class="ent-t hand">${esc(e.text || '')}</div>`}
       ${ph ? `<div class="ent-ph">${ph}</div>` : ''}
-      ${ed ? '<div class="ent-b"><button type="button" class="lbtn" data-addph>사진 붙이기</button><button type="button" class="lbtn" data-del>지우기</button><span class="saved" id="ent-saved">저장됐어요</span><button type="button" class="lbtn dark ok" data-ok>다 썼어요</button></div>' : '<div class="ent-b v"><button type="button" class="lbtn sm" data-edit>고치기</button><button type="button" class="lbtn sm" data-del>지우기</button></div>'}<div class="ent-c"></div></div>`;
+      ${ed ? '<div class="ent-b"><button type="button" class="lbtn" data-del>지우기</button><span class="saved" id="ent-saved">저장됐어요</span><button type="button" class="lbtn dark ok" data-ok>다 썼어요</button></div>' : '<div class="ent-b v"><button type="button" class="lbtn sm" data-edit>고치기</button><button type="button" class="lbtn sm" data-del>지우기</button></div>'}<div class="ent-c"></div></div>`;
   };
   // 시간표: 한 줄이 한 시간, 한 칸이 10분. 잰 시간만큼 과목 색으로 칠해요
   function ttHtml(r) {
@@ -403,15 +428,15 @@
     const li = r.it.map(([t, key, m, n]) => dotLi(i++, key, n ? `${t} ${n}문항` : t, m)).join('') + (r.mx ? dotLi(i++, '자유', '시각 없이 적은 시간', r.mx) : '');
     const ex = []; if (r.solved) ex.push(`문제 ${r.solved}개 맞힘`); if (r.dn) ex.push(`끝낸 것 ${r.dn}개`); for (const t of (r.hw || []).slice(0, 3)) ex.push(`숙제 끝 · ${t}`); for (const t of (r.log || []).slice(0, 1)) ex.push(`학교 · ${t}`);
     const none = fut ? '아직 오지 않은 날이에요.' : isT ? '오늘은 아직 기록이 없어요. 말랑대학에서 공부 시간을 재면 여기에 남아요.' : '기록 없이 쉬어 간 날이에요.';
-    const E = fut ? [] : dayEntries(k), dd = E.filter((e) => !isW(e)), ww = E.filter(isW), can = !fut && !EDIT;
+    const E = fut ? [] : dayEntries(k), dd = E.filter((e) => !isW(e)), ww = E.filter(isW), can = !fut;   // 일기를 쓰는 중에도 고민 적기 단추는 그대로 보여요 (누르면 쓰던 글은 넣어 두고 넘어가요)
     return `<div class="dp"><div class="dp-h"><span class="num">${D.getDate()}</span><div class="dp-hd"><b>${KWD[D.getDay()]}요일${isT ? '<span class="tag">오늘</span>' : ''}</b><span class="cap">${MON[D.getMonth()]} ${D.getFullYear()}</span></div><div class="dp-tot w"><span class="lab">이날 공부한 시간</span><b class="did">${r.min ? fmtMin(r.min) : fut ? '' : '0분'}</b></div></div>
       ${fut ? '' : moodHtml(k, isT)}
       <div class="dp-plan"><div class="dp-list"><span class="h-ul">한 것</span>${li ? `<ul class="dl">${li}</ul>` : ex.length ? '' : `<p class="empty sm">${none}</p>`}${ex.length ? `<ul class="dx did">${ex.map((t) => `<li class="w" style="--i:${i++}">${esc(t)}</li>`).join('')}</ul>` : ''}</div>
         <div class="dp-tt"><span class="h-ul">시간표</span><span class="lab tt-cap">한 칸 10분</span>${ttHtml(r)}</div></div>
-      ${fut ? '' : `<div class="mine"><div class="mine-h"><span class="kh">${isT ? '오늘의 일기' : '이날의 일기'}</span>${can && !dd.length ? `<button type="button" class="lbtn" data-new="day" data-date="${k}">일기 쓰기</button>` : ''}</div>
-        ${dd.map(entHtml).join('') || `<p class="empty sm">${isT ? '아직 안 썼어요. 한 줄이면 충분해요.' : '이날은 쓴 일기가 없어요.'}</p>`}
-        <div class="mine-h sub"><span class="kh">${LOCK}고민 <small>나만 보기</small></span>${can && !ww.length ? `<button type="button" class="lbtn" data-new="worry" data-date="${k}">고민 적기</button>` : ''}</div>
-        ${ww.map(entHtml).join('')}</div>`}</div>`;
+      ${fut ? '' : `<div class="mine"><div class="mine-h"><span class="kh">${isT ? '오늘의 일기' : '이날의 일기'}${TCH ? '' : ' <small>선생님이 볼 수 있어요</small>'}</span>${can && !dd.length ? `<button type="button" class="lbtn" data-new="day" data-date="${k}">일기 쓰기</button>` : ''}</div>
+        ${dd.map(entHtml).join('') || `<p class="empty sm">${TCH && TPUB !== 'on' ? TNONE() : isT ? '아직 안 썼어요. 한 줄이면 충분해요.' : '이날은 쓴 일기가 없어요.'}</p>`}
+        ${TCH ? `<div class="mine-h sub"><span class="kh">${LOCK}고민</span><span class="lab wlock">${WLOCK}</span></div>` : `<div class="mine-h sub"><span class="kh">${LOCK}고민 <small>나만 보기 · 선생님도 못 봐요</small></span>${can && !ww.length ? `<button type="button" class="lbtn" data-new="worry" data-date="${k}">고민 적기</button>` : ''}</div>
+        ${ww.map(entHtml).join('')}`}</div>`}</div>`;
   }
   // ── 오늘의 기분: 먹회색 픽셀 얼굴. 날짜별로 일기와 같은 문서에 넣어요 ──
   const FACE = ['..XXXXX..', '.X.....X.', 'X.......X', 'X.......X', 'X.......X', 'X.......X', 'X.......X', '.X.....X.', '..XXXXX..'];
@@ -472,6 +497,7 @@
   const lstHead = (t, cnt, sub) => `<div class="lst-h"><div class="lst-t"><span class="kttl">${t}</span>${cnt ? `<span class="lab">${cnt}</span>` : ''}</div><p class="ksub">${sub}</p></div>`;
   // 한눈에 보기: 날짜 페이지에 쓴 글을 한 줄씩 모아 보여 주기만 해요. 줄을 누르면 그 날짜 페이지로 넘어가요
   function listHtml(kind) {
+    if (kind === 'worry' && TCH) return lstHead('적어 둔 고민 한눈에 보기', '', WLOCK);   // 선생님 화면에서는 고민을 읽지도 보이지도 않아요
     const wr = kind === 'worry', L = entries().filter((e) => wr === isW(e)).sort((a, b) => (a.date === b.date ? (b.c || 0) - (a.c || 0) : a.date < b.date ? 1 : -1));
     return lstHead(wr ? '적어 둔 고민 한눈에 보기' : '지난 일기 한눈에 보기', `${L.length}${wr ? '개' : '편'}`, wr ? '날짜 페이지에 적은 고민만 따로 모았어요. 나만 볼 수 있고, 줄을 누르면 그날 페이지로 넘어가요.' : '날짜 페이지에 쓴 일기가 최근 것부터 한 줄씩 모여요. 줄을 누르면 그날 페이지로 넘어가요.')
       + (L.map((e, i) => { const D = dt(e.date); return `<button type="button" class="row" style="--i:${i}" data-jump="${idxD(e.date)}"><span class="rd"><b>${D.getMonth() + 1}.${D.getDate()}</b><span class="lab">${KWD[D.getDay()]}요일</span></span><span class="hand">${esc(e.text || '(사진)')}</span></button>`; }).join('') || `<p class="empty">${wr ? '아직 적어 둔 고민이 없어요. 날짜 페이지에서 「고민 적기」로 적으면 여기에 모여요.' : '아직 쓴 일기가 없어요. 날짜 페이지에서 「일기 쓰기」로 쓰면 여기에 모여요.'}</p>`);
@@ -487,7 +513,7 @@
     const ios = /iPhone|iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), alone = matchMedia('(display-mode: standalone)').matches || navigator.standalone, perm = 'Notification' in window ? Notification.permission : 'no';
     const HT = '<svg class="set-ht" viewBox="0 0 7 6" aria-hidden="true"><path d="M1 0h2v1h1V0h2v1h1v2H6v1H5v1H4v1H3V5H2V4H1V3H0V1h1z"/></svg>';
     const note = perm === 'granted' && PUSH ? '켜져 있어요. 기분도 안 고르고 글도 안 쓴 날에만, 하루에 한 번 알려 줘요.' : perm === 'no' ? (ios && !alone ? '홈 화면에 추가한 앱에서 켤 수 있어요.' : '이 브라우저는 알림을 받을 수 없어요.') : perm === 'denied' ? '꺼져 있어요. 설정 앱에서 켤 수 있어요.' : '하루에 한 번, 「오늘의 기분을 선택해 봐요」 하고 알려 줘요.';
-    return `${lstHead('설정', '', '글은 내 코드로 잠가서 저장해요. 고민은 나만 볼 수 있어요.')}
+    return `${lstHead('설정', '', '일기 · 스티커 · 기분은 선생님이 볼 수 있어요. 고민은 내 코드로 잠가서 나만 볼 수 있어요.')}
       <div class="set"><h3>내 글씨체</h3><div class="fonts">${FONTS.map((f) => `<button type="button" data-font="${f.id}" class="${f.id === FONT ? 'on' : ''}">${HT}<small>${f.n}</small><span class="pv" style="font-family:'${f.fam}',cursive">오늘도 한 장, 천천히 123</span></button>`).join('')}</div></div>
       <div class="set"><h3>책갈피</h3><div class="bmset">${BMS.map(([k, n]) => `<button type="button" data-bm="${k}" class="${k === BM ? 'on' : ''}" aria-label="${n}"><img src="assets/fly/bm_${k}.webp" alt="" draggable="false"><small>${HT}${n}</small></button>`).join('')}</div></div>
       <div class="set rw"><div><h3>저장</h3><p id="srv-state">${srvText()}</p></div></div>
@@ -526,12 +552,19 @@
   { const _toc = BODY.toc; BODY.toc = () => _toc() + (instShow() ? instRow() : ''); }
   function refresh() { if (busy) return; desel(); mount(true); }
   function layout() {
-    const W = innerWidth, H = innerHeight, two = W > H && W >= 900, tabw = W < 500 ? 24 : W < 900 ? 32 : 36, padX = W < 500 ? 6 : 18, availH = H - (W < 500 ? 22 : 40) - 66, availW = W - padX * 2 - tabw - 16;
-    let pw, ph; if (two) { pw = Math.min(availW / 2, availH / 1.3); ph = Math.min(availH, pw * 1.42); } else { pw = Math.min(availW, availH / 1.25); ph = Math.min(availH, pw * (pw < 500 ? 2.3 : 1.46)); }
-    pw = Math.floor(pw); ph = Math.floor(ph); const r = document.documentElement.style;
+    // 두 쪽: 가로로 넓은 화면, 그리고 펼친 접는 폰처럼 거의 정사각형인 화면(가로 640 이상, 가로/세로 0.8 이상). 세로로 긴 태블릿은 한 쪽 그대로예요
+    const W = innerWidth, H = innerHeight, two = (W > H && W >= 900) || (W >= 640 && W / H >= 0.8), tight = W < 500 || H < 500 || (two && W < 900), tabw = tight ? 24 : W < 900 ? 32 : 36, padX = tight ? 6 : 18, availH = H - (tight ? 22 : 40) - 66, availW = W - padX * 2 - tabw - (two && tight ? 26 : 16);
+    // 높이가 낮은 화면(폰을 가로로)에서는 쪽을 높이에 맞춰 줄이지 않아요. 폭은 읽히는 크기로 두고 쪽 안을 위아래로 밀어 봐요
+    const cap = two ? availW / 2 : availW, byH = availH / (two ? 1.3 : 1.25); let pw = Math.min(cap, Math.max(byH, Math.min(cap, 340))), ph = Math.min(availH, pw * (pw < 500 ? 2.3 : two ? 1.42 : 1.46));
+    pw = Math.floor(pw); ph = Math.floor(ph); const r = document.documentElement.style, low = ph < pw * 1.2;
     r.setProperty('--pw', pw + 'px'); r.setProperty('--pwn', pw); PHONE = pw < 500; r.setProperty('--u', (PHONE ? pw / 62 : pw / 100) + 'px'); r.setProperty('--ph', ph + 'px'); r.setProperty('--bw', (two ? pw * 2 : pw) + 'px'); r.setProperty('--tabw', tabw + 'px'); book.style.marginRight = tabw + 'px';
-    document.body.classList.toggle('two', two); document.body.classList.toggle('one', !two);
-    if (two !== TWO) { TWO = two; if (P.length) mount(); }
+    const cvr = PHONE ? 1.9 : 1.42; r.setProperty('--cvr', cvr); r.setProperty('--cvs', low ? (ph / (pw * cvr)).toFixed(4) : 1);
+    document.body.classList.toggle('two', two); document.body.classList.toggle('one', !two); document.body.classList.toggle('narrow', PHONE); document.body.classList.toggle('low', low);
+    if (two !== TWO) {
+      // 한 쪽 ↔ 두 쪽이 바뀌면 다시 그려요. 보던 쪽, 쪽 안 위치, 쓰던 글 칸은 그대로 이어요
+      const first = TWO === null, ta = $('#ent-ta'), foc = ta && document.activeElement === ta, sel = ta ? [ta.selectionStart, ta.selectionEnd] : null; if (ta) { const e = editing(); if (e) e.text = ta.value; }
+      TWO = two; if (P.length) { mount(!first); if (foc) { const t2 = $('#ent-ta'); if (t2) { t2.focus({ preventScroll: true }); try { t2.setSelectionRange(sel[0], sel[1]); } catch (e) {} } } }
+    }
   }
 
   // 지금 어디인지: 탭 · 두께 · 위쪽 글
@@ -622,7 +655,7 @@
     const ta = $('#ent-ta', el);
     if (ta) {
       // 칸 높이: 글이 늘 때는 늘리기만 해요 (칸을 접었다 펴면 사파리에서 쪽이 위아래로 튀어요). 줄어들 때만, 손을 멈춘 뒤에 한 번 다시 재요
-      const grow = () => { if (ta.scrollHeight > ta.clientHeight + 1) ta.style.height = ta.scrollHeight + 'px'; };
+      const grow = () => { if (ta.scrollHeight > ta.clientHeight + 1) { ta.style.height = ta.scrollHeight + 'px'; const b = ta.parentNode.querySelector('.ent-b'); if (b) b.scrollIntoView({ block: 'nearest' }); } };   // 줄이 늘면 아래 단추 줄이 가려지지 않게 쪽 안에서 따라 내려가요
       const refit = () => { const i = ta.closest('.in'), y = i ? i.scrollTop : 0; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; if (i && i.scrollTop !== y) i.scrollTop = y; };
       requestAnimationFrame(refit);
       let t, ft, len = ta.value.length;
@@ -635,7 +668,6 @@
       ta.addEventListener('compositionstart', () => (ta._comp = true)); ta.addEventListener('compositionend', () => (ta._comp = false));
       $('[data-ok]', el).onclick = () => { snd('done'); finishEdit(); tchNote(); };
       const keep = (f) => { const tv = ta.value; f(); refresh(); const t2 = $('#ent-ta'); if (t2) t2.value = tv; };
-      $('[data-addph]', el).onclick = () => pickPhoto((id, sh) => { const e = editing(); if (!e) return; keep(() => { e.text = ta.value; (e.ph = e.ph || []).push({ id, sh }); e.at = Date.now(); commit(true); }); });
       $$('[data-phx]', el).forEach((b) => (b.onclick = () => { const e = editing(); if (!e) return; keep(() => { e.ph = entPh(e).filter((x) => x.id !== b.dataset.phx); e.at = Date.now(); commit(true); }); }));
     }
     const po = $('#push-on', el); if (po) po.onclick = pushOn;
@@ -644,7 +676,7 @@
   }
   const editing = () => (EDIT ? EDIT.draft || DOC.entries[EDIT.id] : null);
   function commit(force) { const e = editing(); if (!e) return; if (EDIT.draft) { if (!force && !String(e.text || '').trim() && !(e.ph || []).length) return; DOC.entries[e.id] = e; delete EDIT.draft; } save(); }
-  function finishEdit(silent) { const e = editing(); if (e) { const ta = $('#ent-ta'); if (ta) e.text = ta.value; const emp = !String(e.text || '').trim() && !(e.ph || []).length; if (emp) { if (DOC.entries[e.id]) { delete DOC.entries[e.id]; DOC.gone[e.id] = Date.now(); save(); } } else { e.at = Date.now(); commit(true); } } EDIT = null; if (!silent) { refresh(); if (e && String(e.text || '').trim()) toast('오늘의 한 장, 잘 넣어 뒀어요'); } }
+  function finishEdit(silent) { const e = editing(); if (e) { const ta = $('#ent-ta'); if (ta) e.text = ta.value; const emp = !String(e.text || '').trim() && !(e.ph || []).length; if (emp) { if (DOC.entries[e.id]) { delete DOC.entries[e.id]; DOC.gone[e.id] = Date.now(); save(); } } else { e.at = Date.now(); commit(true); } } EDIT = null; if (!silent) { refresh(); if (e && String(e.text || '').trim()) toast(isW(e) ? '고민은 선생님도 볼 수 없게 잠가 놨어요. 안심해요' : '오늘의 한 장, 잘 넣어 뒀어요'); } }
   function focusTa() { const ta = $('#ent-ta'); if (ta) { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); ta.closest('.ent').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }
   // 고치기: 그 글을 그대로 열어요 (새 글을 만들지 않아요). 다른 글을 쓰던 중이면 먼저 넣어 두고, 같은 내용으로 숨어 있던 쌍둥이는 정리해요
   function startEdit(id) { if (EDIT && EDIT.id === id) return focusTa(); if (EDIT) finishEdit(true); const e = DOC.entries[id]; if (!e) return refresh(); if (dropTwins(e)) save(); EDIT = { id }; refresh(); focusTa(); }
@@ -663,6 +695,7 @@
   // 쓰기: 그 날짜 페이지에 그 종류 글이 이미 있으면 새로 만들지 않고 그 글을 열어요 (같은 글이 두 개 생기지 않게)
   let NEWT = 0;
   function newEntry(kind, date) {
+    if (TCH && kind === 'worry') return toast(WLOCK);
     date = isDate(date) && date <= TODAY() ? date : TODAY(); if (busy || NEWT || idxD(date) < 0) return;
     const start = () => {
       NEWT = 0; const i = idxD(date), v = view(pos); if (i < 0 || (v.L !== i && v.R !== i)) return;
@@ -776,7 +809,7 @@
   }
   $('#b-stk').onclick = () => { if (!tray.classList.contains('hide') && $('.tray-g', tray)) return closeTray(); stkTray(); };
   $('#b-toc').onclick = () => go(idxT('toc'), true);
-  $('#b-write').onclick = () => { if (EDIT && $('#ent-ta')) return focusTa(); const T = dayEntries(TODAY()), hd = T.some((e) => !isW(e)), hw = T.some(isW); openTray(`<div class="tray-h"><b>오늘 페이지에 쓰기</b><button type="button" data-x>닫기</button></div><div class="tray-w"><button type="button" data-n="day" style="--i:0"><span>${hd ? '오늘 일기 이어 쓰기' : '오늘 일기 쓰기'}</span><small>있었던 일 · 기분</small></button><button type="button" data-n="worry" style="--i:1"><span>${hw ? '오늘 적은 고민 이어 쓰기' : '고민 적어 두기'}</span><small>나만 보기</small></button></div>`, (el) => { $('[data-x]', el).onclick = closeTray; $$('[data-n]', el).forEach((b) => (b.onclick = () => { closeTray(); newEntry(b.dataset.n); })); }); };
+  $('#b-write').onclick = () => { if (EDIT && $('#ent-ta')) return focusTa(); const T = dayEntries(TODAY()), hd = T.some((e) => !isW(e)), hw = T.some(isW); openTray(`<div class="tray-h"><b>오늘 페이지에 쓰기</b><button type="button" data-x>닫기</button></div><div class="tray-w"><button type="button" data-n="day" style="--i:0"><span>${hd ? '오늘 일기 이어 쓰기' : '오늘 일기 쓰기'}</span><small>있었던 일 · 기분</small></button>${TCH ? '' : `<button type="button" data-n="worry" style="--i:1"><span>${hw ? '오늘 적은 고민 이어 쓰기' : '고민 적어 두기'}</span><small>나만 보기</small></button>`}</div>`, (el) => { $('[data-x]', el).onclick = closeTray; $$('[data-n]', el).forEach((b) => (b.onclick = () => { closeTray(); newEntry(b.dataset.n); })); }); };
   $('#b-prev').onclick = () => step(-1);
   $('#b-next').onclick = () => step(1);
 
@@ -818,7 +851,7 @@
     try { const o = await resolve(w); if (!mine(o)) { if (err) err.textContent = o ? '이 다이어리는 주인만 열 수 있어요' : '코드를 다시 확인해 주세요'; return false; } AUTH = { who: o.who, code: o.code }; LS.set('jd:auth', AUTH); KEYP = null; afterAuth(); mount(); setTimeout(() => go(TWO ? 1 : 2), 500); return true; }
     catch (e) { if (err) err.textContent = '지금은 확인할 수 없어요. 조금 뒤에 다시 해 주세요'; return false; }
   }
-  function afterAuth() { loadUniv(); pull(); }
+  function afterAuth() { loadUniv(); pull(); if (TCH) tchPull(); }
   let tchAt = 0;
   // 선생님 화면에서 글을 다 쓰거나 스티커를 붙이면 저장 대신 알려 줘요 (한 번 뜨면 20초 쉬어요)
   function tchNote() { if (!TCH) return; const n = Date.now(); if (n - tchAt < 20000) return; tchAt = n; setTimeout(() => toast('선생님 화면이라 저장되지 않아요'), 350); }
@@ -842,7 +875,7 @@
     applyFont(); LS.del('jd:weeks');   // 예전 주 단위 저장 칸은 더 쓰지 않아요 (날짜 단위 jd:days 로 바뀜)
     // 같은 브라우저의 말랑대학이 선생님이면: 코드 없이 열고, 정윤의 글은 읽지도 쓰지도 않아요
     const u0 = LS.get('mallang-univ:v1', null);
-    if (u0 && (u0.role === 'teacher' || u0.role === 'admin')) { TCH = true; AUTH = { who: CFG.owner, code: '' }; DOC = { v: 2, entries: {}, stk: {}, gone: {}, fly: {}, at: 0 }; PUSH = null; SRV = 'tch'; setTimeout(() => toast('선생님 화면이에요. 여기서 쓴 건 저장되지 않아요'), 900); }
+    if (u0 && (u0.role === 'teacher' || u0.role === 'admin')) { TCH = true; document.body.classList.add('tch'); TKEY = typeof u0.syncKey === 'string' ? u0.syncKey : ''; AUTH = { who: CFG.owner, code: '' }; DOC = { v: 2, entries: {}, stk: {}, gone: {}, fly: {}, at: 0 }; PUSH = null; SRV = 'tch'; setTimeout(() => toast('선생님 화면이에요. 여기서 쓴 건 저장되지 않아요'), 900); }
     if (MOCK && !TCH) AUTH = { who: CFG.owner, code: '' };
     if (!AUTH) { const u = LS.get('mallang-univ:v1', null); if (u && u.who === CFG.owner && (u.role || 'student') === 'student' && u.syncKey) { AUTH = { who: u.who, code: u.syncKey }; LS.set('jd:auth', AUTH); } }   // 같은 브라우저에서 말랑대학을 쓰고 있으면 그대로 열려요
     if (!DOC.fly.since) { let s0 = LS.get('jd:since', ''); if (!s0) { const d = new Date(); s0 = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`; LS.set('jd:since', s0); } DOC.fly.since = s0; }   // 처음 연 날을 한 번만 적어 두고 그대로 써요 (카드에서 눌러 고칠 수 있어요)
