@@ -754,3 +754,17 @@ body.closed #here { opacity: 0; }
 .tray-g button > div { width: calc(var(--tw) * var(--pw)) !important; }
 .tray-g.g-pixel { grid-template-columns: repeat(auto-fill, 96px); } .tray-g.g-pixel button { aspect-ratio: 1; --pw: 360px; }
 .tray-g .mine { background: var(--wh); border: 0; color: #575757; }
+
+/* 설정 쪽: 흰 판 없이 모눈 위에 바로, 라벨은 먹회색 한 색, 고른 것 앞에 픽셀 하트 */
+.set { padding: calc(var(--u) * 1.8) 0; border-bottom: 1px dotted var(--line); }
+.set h3 { display: block; margin: 0 0 calc(var(--u) * .9); padding: 0; background: none !important; font: 400 max(11px, calc(var(--u) * 2.1)) / 1.2 var(--f-px); letter-spacing: .06em; color: #575757; }
+.set p { margin: 0; font: 400 calc(var(--u) * 2) / 1.5 var(--f-thin); color: var(--gr); }
+.set.rw { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--u) * 1) calc(var(--u) * 2); } .set.rw > div:first-child { flex: 1; min-width: 0; } .set.rw h3 { margin-bottom: calc(var(--u) * .5); } .set.rw .lbtn { flex: none; } #lock-c { flex: 0 0 100%; } #lock-c:empty { display: none; }
+.set-ht { flex: none; width: calc(var(--u) * 1.75); height: calc(var(--u) * 1.5); fill: #575757; visibility: hidden; shape-rendering: crispEdges; } .on > .set-ht, .on small .set-ht { visibility: visible; }
+.fonts { gap: 0; }
+.fonts button, .fonts button.on { display: grid; grid-template-columns: calc(var(--u) * 1.75) calc(var(--u) * 20) 1fr; column-gap: calc(var(--u) * 1.2); align-items: center; padding: calc(var(--u) * .7) 0; border: 0; border-radius: 0; background: none; }
+.fonts small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fonts .pv { font-size: calc(var(--u) * 3); line-height: 1.3; color: var(--gr); } .fonts .on .pv { color: #3f3f3f; }
+.bmset { gap: calc(var(--u) * 4); } .bmset button, .bmset button.on { padding: 0; background: none; gap: calc(var(--u) * .8); }
+.bmset img { width: calc(var(--u) * 2.9); height: calc(var(--u) * 12); opacity: .7; } .bmset .on img { opacity: 1; }
+.bmset small { display: flex; align-items: center; gap: .4em; } .bmset button:not(.on) .set-ht { display: none; }

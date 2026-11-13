@@ -380,13 +380,15 @@
   function photosHtml() { const L = allPhotos(); return lstHead('붙인 사진 한눈에 보기', `${L.length}장`, '일기와 페이지에 붙인 내 사진이 모여요. 사진을 누르면 붙인 페이지로 넘어가요.') + (L.length ? `<div class="phg">${L.map((x, n) => `<div data-jump="${x.go}" style="--r:${[-3, 2, -1, 3][n % 4]}deg" class="pc sh-${esc(x.sh || 'pol')}"><div class="pc-i"><img data-ph="${esc(x.id)}" alt="" draggable="false"></div></div>`).join('')}</div>` : '<p class="empty">아직 붙인 사진이 없어요. 아래 「붙이기」에서 내 사진을 올리면 여기에 모여요.</p>'); }
   function aboutHtml() {
     const ios = /iPhone|iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), alone = matchMedia('(display-mode: standalone)').matches || navigator.standalone, perm = 'Notification' in window ? Notification.permission : 'no';
-    return `${lstHead('설정', '', '글씨체, 저장, 알림을 여기서 바꿔요.')}
-      <div class="set"><h3>내 글씨체</h3><p>내가 쓴 글에만 쓰여요.</p><div class="fonts">${FONTS.map((f) => `<button type="button" data-font="${f.id}" class="${f.id === FONT ? 'on' : ''}"><span class="rb"></span><small>${f.n}</small><span class="pv" style="font-family:'${f.fam}',cursive">오늘도 한 장, 천천히 써 내려간다 123</span></button>`).join('')}</div></div>
-      <div class="set"><h3>책갈피</h3><p>오늘 쪽에 꽂아 두는 책갈피예요. 무늬를 골라요.</p><div class="bmset">${BMS.map(([k, n]) => `<button type="button" data-bm="${k}" class="${k === BM ? 'on' : ''}" aria-label="${n}"><img src="assets/fly/bm_${k}.webp" alt="" draggable="false"><small>${n}</small></button>`).join('')}</div></div>
-      <div class="set"><h3>저장</h3><p id="srv-state">${srvText()}</p><p>글은 내 코드로 잠가서 저장해요. 고민은 나만 볼 수 있어요.</p></div>
-      <div class="set"><h3>알림</h3><p>${perm === 'granted' && PUSH ? '알림이 켜져 있어요. 밤에 한 줄 쓰자고 조용히 알려 줘요.' : perm === 'no' ? (ios && !alone ? '홈 화면에 추가한 앱에서 알림을 켤 수 있어요.' : '이 브라우저는 알림을 받을 수 없어요.') : perm === 'denied' ? '알림이 꺼져 있어요. 설정 앱에서 켤 수 있어요.' : '밤에 한 줄 쓰자고, 일요일엔 한 주가 다 채워졌다고 알려 줘요.'}</p>${perm === 'default' || (perm === 'granted' && !PUSH) ? '<button type="button" class="lbtn dark" id="push-on">알림 켜기</button>' : ''}</div>
-      ${alone ? '' : `<div class="set"><h3>앱으로 쓰기</h3><p>${ios ? '사파리 공유 단추를 누르고 「홈 화면에 추가」를 고르면 앱이 돼요.' : '브라우저 메뉴에서 「홈 화면에 추가」 또는 「앱 설치」를 고르면 앱이 돼요.'}</p></div>`}
-      <div class="set"><h3>잠그기</h3><p>이 기기에서 다이어리를 닫아 둬요. 다시 열 때 코드가 필요해요. 쓴 글은 지워지지 않아요.</p><button type="button" class="lbtn" id="lock-ask">이 기기에서 잠그기</button><div id="lock-c"></div></div>`;
+    const HT = '<svg class="set-ht" viewBox="0 0 7 6" aria-hidden="true"><path d="M1 0h2v1h1V0h2v1h1v2H6v1H5v1H4v1H3V5H2V4H1V3H0V1h1z"/></svg>';
+    const note = perm === 'granted' && PUSH ? '켜져 있어요. 밤에 한 줄 쓰자고 알려 줘요.' : perm === 'no' ? (ios && !alone ? '홈 화면에 추가한 앱에서 켤 수 있어요.' : '이 브라우저는 알림을 받을 수 없어요.') : perm === 'denied' ? '꺼져 있어요. 설정 앱에서 켤 수 있어요.' : '밤에 한 줄 쓰자고 알려 줘요.';
+    return `${lstHead('설정', '', '글은 내 코드로 잠가서 저장해요. 고민은 나만 볼 수 있어요.')}
+      <div class="set"><h3>내 글씨체</h3><div class="fonts">${FONTS.map((f) => `<button type="button" data-font="${f.id}" class="${f.id === FONT ? 'on' : ''}">${HT}<small>${f.n}</small><span class="pv" style="font-family:'${f.fam}',cursive">오늘도 한 장, 천천히 123</span></button>`).join('')}</div></div>
+      <div class="set"><h3>책갈피</h3><div class="bmset">${BMS.map(([k, n]) => `<button type="button" data-bm="${k}" class="${k === BM ? 'on' : ''}" aria-label="${n}"><img src="assets/fly/bm_${k}.webp" alt="" draggable="false"><small>${HT}${n}</small></button>`).join('')}</div></div>
+      <div class="set rw"><div><h3>저장</h3><p id="srv-state">${srvText()}</p></div></div>
+      <div class="set rw"><div><h3>알림</h3><p>${note}</p></div>${perm === 'default' || (perm === 'granted' && !PUSH) ? '<button type="button" class="lbtn sm" id="push-on">알림 켜기</button>' : ''}</div>
+      ${alone ? '' : `<div class="set rw"><div><h3>앱으로 쓰기</h3><p>${ios ? '사파리 공유 단추에서 「홈 화면에 추가」를 골라요.' : '브라우저 메뉴에서 「앱 설치」를 골라요.'}</p></div></div>`}
+      <div class="set rw"><div><h3>잠그기</h3><p>다시 열 때 코드가 필요해요. 쓴 글은 그대로예요.</p></div><button type="button" class="lbtn sm" id="lock-ask">잠그기</button><div id="lock-c"></div></div>`;
   }
 
   // 스티커 (사진 · 문구 종이만)
