@@ -842,3 +842,13 @@ body.closed #here { opacity: 0; }
 #snd { position: absolute; left: 6px; top: -4px; z-index: 6; padding: 8px 8px; background: none; font: 400 11px/1 var(--f-px); letter-spacing: .04em; color: var(--gr); }
 #snd[aria-pressed="false"] { opacity: .55; text-decoration: line-through; }
 .page.long .pglab { visibility: hidden; }
+
+/* 코드 넣는 칸: 표지 결로. 두 도트 띠 사이, 먹회색 픽셀 글씨 한 줄 + 점선 밑줄 + 작은 사각 단추 */
+.cv-code { left: 12%; right: 12%; top: 61%; bottom: auto; background: none; border-radius: 0; padding: 0; box-shadow: none; animation: none !important; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+.cv-code p { margin: 0; font: 400 max(10px, calc(var(--u) * 1.9)) / 1.2 var(--f-px); letter-spacing: .06em; color: var(--gr); }
+.cv-code .err { order: -1; min-height: 0; margin: 0; font: 400 max(10px, calc(var(--u) * 1.9)) / 1.2 var(--f-px); color: var(--gr); }
+.cv-code .err:empty { display: none; } .cv-code:has(.err:not(:empty)) > p:first-child { display: none; }
+.cv-code .cc-r { display: flex; align-items: flex-end; justify-content: center; gap: 8px; width: 100%; }
+.cv-code input { flex: 0 1 58%; min-width: 0; width: auto; height: 27px; padding: 0; border: 0; border-bottom: 2px dotted var(--gr); border-radius: 0; background: none; text-align: center; font: 400 16px/1 var(--f-px); letter-spacing: .2em; color: var(--gr); outline: 0; }
+.cv-code button { margin: 0; width: auto; height: 25px; padding: 0 10px; border: 1.5px dotted var(--gr); border-radius: 0; background: #fff; color: var(--gr); font: 400 12px/1 var(--f-px); letter-spacing: .1em; }
+@media (max-width: 499px) { .cv-code { top: 67.5%; gap: 6px; } .cv-code p, .cv-code .err { font-size: 10px; } }

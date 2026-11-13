@@ -10,10 +10,11 @@
   const CFG = window.DIARY_CFG || {}, STK = window.STK, ORDER = window.STK_ORDER;
   const $ = (s, el) => (el || document).querySelector(s), $$ = (s, el) => [...(el || document).querySelectorAll(s)];
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let TCH = false;   // 선생님 화면: 아무것도 저장하지 않고 메모리에서만 움직여요 (소리 켜기 끄기만 이 기기에 남겨요)
   const LS = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
-    del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+    set(k, v) { if (TCH && k !== 'jd:snd') return true; try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+    del(k) { if (TCH) return; try { localStorage.removeItem(k); } catch (e) {} },
   };
 
   // 소리: 파일 없이 그 자리에서 만들어요 (걸러 낸 잡음 덩이를 짧게 겹쳐서 종이·연필 소리처럼)
@@ -98,7 +99,7 @@
   const idb = (() => {
     let p; const open = () => p || (p = new Promise((res, rej) => { const r = indexedDB.open('jd', 1); r.onupgradeneeded = () => r.result.createObjectStore('ph'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }));
     const tx = async (m, f) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('ph', m), q = f(t.objectStore('ph')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
-    return { get: (k) => tx('readonly', (s) => s.get(k)).catch(() => null), put: (k, v) => tx('readwrite', (s) => s.put(v, k)).catch(() => null), del: (k) => tx('readwrite', (s) => s.delete(k)).catch(() => null) };
+    return { get: (k) => (TCH ? Promise.resolve(null) : tx('readonly', (s) => s.get(k)).catch(() => null)), put: (k, v) => (TCH ? Promise.resolve((PH[k] = v, null)) : tx('readwrite', (s) => s.put(v, k)).catch(() => null)), del: (k) => (TCH ? Promise.resolve(null) : tx('readwrite', (s) => s.delete(k)).catch(() => null)) };
   })();
   const PH = {};
   async function photo(id) { if (PH[id]) return PH[id]; let v = await idb.get(id); if (!v && SRV === 'on') { try { const r = await rpc('diary_photo_get', { p_student: AUTH.who, p_code: AUTH.code, p_id: id }); if (r) { v = await dec(r); await idb.put(id, v); } } catch (e) {} } if (v) PH[id] = v; return v; }
@@ -128,7 +129,7 @@
     return ch;
   }
   async function pull() {
-    if (MOCK || !AUTH || !AUTH.code) return;
+    if (TCH || MOCK || !AUTH || !AUTH.code) return;
     try { const r = await rpc('diary_get', { p_student: AUTH.who, p_code: AUTH.code }); SRV = 'on'; if (r && r.doc) { const ch = merge(JSON.parse(await dec(r.doc))); if (ch) { LS.set('jd:doc', DOC); buildPages(); refresh(); } } if (DOC.at && (!r || !r.at || r.at < DOC.at)) pushSoon(); }
     catch (e) { SRV = e.status === 404 ? 'none' : 'err'; }
     const s = $('#srv-state'); if (s) s.textContent = srvText();
@@ -136,11 +137,11 @@
   let pushT;
   function pushSoon() { clearTimeout(pushT); pushT = setTimeout(pushNow, 1500); }
   async function pushNow() {
-    if (SRV !== 'on' || !AUTH || !AUTH.code) return;
+    if (TCH || SRV !== 'on' || !AUTH || !AUTH.code) return;
     try { await rpc('diary_put', { p_student: AUTH.who, p_code: AUTH.code, p_doc: await enc(JSON.stringify(DOC)), p_at: DOC.at, p_push: PUSH || {} }); } catch (e) { SRV = 'err'; }
   }
-  function save() { DOC.at = Date.now(); if (!LS.set('jd:doc', DOC)) toast('저장 칸이 꽉 찼어요. 사진을 조금 지워 주세요'); pushSoon(); }
-  const srvText = () => ({ on: '이 기기와 서버 두 곳에 잠가서 저장하고 있어요', none: '지금은 이 기기에만 저장돼요', err: '서버에 닿지 않아서 이 기기에만 저장했어요. 다음에 열 때 다시 올려요', wait: '저장 칸을 확인하고 있어요', mock: '시험 화면이라 이 기기에만 저장돼요' }[SRV]);
+  function save() { DOC.at = Date.now(); if (TCH) return; if (!LS.set('jd:doc', DOC)) toast('저장 칸이 꽉 찼어요. 사진을 조금 지워 주세요'); pushSoon(); }
+  const srvText = () => ({ on: '이 기기와 서버 두 곳에 잠가서 저장하고 있어요', none: '지금은 이 기기에만 저장돼요', err: '서버에 닿지 않아서 이 기기에만 저장했어요. 다음에 열 때 다시 올려요', wait: '저장 칸을 확인하고 있어요', mock: '시험 화면이라 이 기기에만 저장돼요', tch: '선생님 화면이라 저장되지 않아요' }[SRV]);
 
   // ── 말랑대학 기록 → 날마다 한 것 (읽기만) ──
   // 말랑대학 「시간표」(이번 주 모두) 화면과 같은 기록을 같은 규칙으로 읽어요 (univ app.js srBlocks · srTime):
@@ -215,7 +216,7 @@
     try {
       let d;
       if (MOCK) d = mockFill(await (await fetch('_mock.json')).json());
-      else if (AUTH && AUTH.code) d = await rpc('univ_get', { p_student: AUTH.who, p_code: AUTH.code });
+      else if (!TCH && AUTH && AUTH.code) d = await rpc('univ_get', { p_student: AUTH.who, p_code: AUTH.code });
       if (!d) return;
       const C = computeDays(d);
       // 말랑대학에 아직 남아 있는 기간은 말랑대학 기록 그대로(지운 것은 여기서도 빠져요). 그보다 옛날 날짜는 쌓아 둔 것을 그대로 둬요
@@ -265,7 +266,7 @@
   setTimeout(() => document.body.classList.remove('cv-in'), 3200);   // 표지가 처음 나타날 때만 움직여요
   function coverHtml() {
     return `<div class="cv"><i class="cv-lace b"></i><div class="cv-ttl">MY DIARY<small>${new Date().getFullYear()}</small></div>
-      ${!AUTH ? `<form class="cv-code" id="code-f"><p>주인만 열 수 있어요. 내 코드를 적어 주세요</p><input id="code-in" inputmode="text" autocomplete="off" autocapitalize="off" maxlength="24" aria-label="내 코드"><button type="submit">열기</button><p class="err" id="code-err"></p></form>` : '<div class="cv-open">TAP TO OPEN</div>'}</div>`;
+      ${!AUTH ? `<form class="cv-code" id="code-f"><p>주인만 열 수 있어요. 내 코드를 적어 주세요</p><div class="cc-r"><input id="code-in" inputmode="text" autocomplete="off" autocapitalize="off" maxlength="24" aria-label="내 코드"><button type="submit">열기</button></div><p class="err" id="code-err"></p></form>` : '<div class="cv-open">TAP TO OPEN</div>'}</div>`;
   }
   // ── 첫 장: 가로 ID 카드를 글씨가 똑바로 읽히는 방향 그대로 놓아요. 카드 바탕은 그림(assets/fly/idcard_*.webp), 글자·입력 칸·사진은 그 위에 % 자리로 얹어요 ──
   const idTone = () => (DOC.fly.tone === 'sk' ? 'sk' : 'pk');
@@ -431,7 +432,7 @@
       <div class="set rw"><div><h3>알림</h3><p>${note}</p></div>${perm === 'default' || (perm === 'granted' && !PUSH) ? '<button type="button" class="lbtn sm" id="push-on">알림 켜기</button>' : ''}</div>
       ${alone ? '' : `<div class="set rw"><div><h3>앱으로 쓰기</h3><p>${ios ? '사파리 공유 단추에서 「홈 화면에 추가」를 골라요.' : '브라우저 메뉴에서 「앱 설치」를 골라요.'}</p></div></div>`}
       <div class="set rw"><div><h3>소리</h3><p>종이 넘기는 소리, 연필 소리, 스티커 붙이는 소리가 나요.</p></div><button type="button" class="lbtn sm" id="snd-set">${SND ? '소리 끄기' : '소리 켜기'}</button></div>
-      <div class="set rw"><div><h3>잠그기</h3><p>다시 열 때 코드가 필요해요. 쓴 글은 그대로예요.</p></div><button type="button" class="lbtn sm" id="lock-ask">잠그기</button><div id="lock-c"></div></div>`;
+      ${TCH ? '' : '<div class="set rw"><div><h3>잠그기</h3><p>다시 열 때 코드가 필요해요. 쓴 글은 그대로예요.</p></div><button type="button" class="lbtn sm" id="lock-ask">잠그기</button><div id="lock-c"></div></div>'}`;
   }
 
   // 스티커 (사진 · 문구 종이만)
@@ -548,7 +549,7 @@
     if (ta) {
       const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }; requestAnimationFrame(fit);
       let t; ta.oninput = () => { fit(); const e = editing(); if (!e) return; e.text = ta.value; e.at = Date.now(); clearTimeout(t); t = setTimeout(() => { commit(); const s = $('#ent-saved'); if (s) { s.classList.add('on'); setTimeout(() => s.classList.remove('on'), 1400); } }, 400); };
-      $('[data-ok]', el).onclick = () => { snd('done'); finishEdit(); };
+      $('[data-ok]', el).onclick = () => { snd('done'); finishEdit(); tchNote(); };
       const keep = (f) => { const tv = ta.value; f(); refresh(); const t2 = $('#ent-ta'); if (t2) t2.value = tv; };
       $('[data-addph]', el).onclick = () => pickPhoto((id, sh) => { const e = editing(); if (!e) return; keep(() => { e.text = ta.value; (e.ph = e.ph || []).push({ id, sh }); e.at = Date.now(); commit(true); }); });
       $$('[data-phx]', el).forEach((b) => (b.onclick = () => { const e = editing(); if (!e) return; keep(() => { e.ph = entPh(e).filter((x) => x.id !== b.dataset.phx); e.at = Date.now(); commit(true); }); }));
@@ -664,7 +665,7 @@
   });
   function addStk(k, extra) {
     const v = view(pos); let pi = [v.L, v.R].includes(STKPAGE) ? STKPAGE : v.R >= 0 ? v.R : v.L; if (P[pi].t === 'cover') return;
-    const pg = $(`.slot > .page[data-pi="${pi}"]`), sc = $('.in', pg); if (!sc) return; snd('stick'); const pw = pg.clientWidth, y = (sc.scrollTop + sc.clientHeight * (0.3 + Math.random() * 0.3)) / pw, s = { id: 's' + uid(), k, x: +(0.5 + (Math.random() - 0.5) * 0.4).toFixed(3), y: +y.toFixed(4), r: 0, s: 1, ...(extra || {}) };
+    const pg = $(`.slot > .page[data-pi="${pi}"]`), sc = $('.in', pg); if (!sc) return; snd('stick'); tchNote(); const pw = pg.clientWidth, y = (sc.scrollTop + sc.clientHeight * (0.3 + Math.random() * 0.3)) / pw, s = { id: 's' + uid(), k, x: +(0.5 + (Math.random() - 0.5) * 0.4).toFixed(3), y: +y.toFixed(4), r: 0, s: 1, ...(extra || {}) };
     stkMut(pi, (L) => L.push(s)); const tmp = document.createElement('div'); tmp.innerHTML = stkHtml(s, 'new'); const el = tmp.firstElementChild; $('.sheet', pg).appendChild(el); fillPhotos(el); bindStk(el, pi); closeTray();
     if (k === 'note') setTimeout(() => { select(el, pi); const b = $('[data-t="tx"]', tool); if (b) b.click(); }, 350);
   }
@@ -710,15 +711,20 @@
   }
   const mine = (o) => o && o.who === CFG.owner && (o.role || 'student') === 'student' && o.code;
   async function login(w) {
+    if (TCH) return false;
     const err = $('#code-err'); if (err) err.textContent = '';
     try { const o = await resolve(w); if (!mine(o)) { if (err) err.textContent = o ? '이 다이어리는 주인만 열 수 있어요' : '코드를 다시 확인해 주세요'; return false; } AUTH = { who: o.who, code: o.code }; LS.set('jd:auth', AUTH); KEYP = null; afterAuth(); mount(); setTimeout(() => go(TWO ? 1 : 2), 500); return true; }
     catch (e) { if (err) err.textContent = '지금은 확인할 수 없어요. 조금 뒤에 다시 해 주세요'; return false; }
   }
   function afterAuth() { loadUniv(); pull(); }
+  let tchAt = 0;
+  // 선생님 화면에서 글을 다 쓰거나 스티커를 붙이면 저장 대신 알려 줘요 (한 번 뜨면 20초 쉬어요)
+  function tchNote() { if (!TCH) return; const n = Date.now(); if (n - tchAt < 20000) return; tchAt = n; setTimeout(() => toast('선생님 화면이라 저장되지 않아요'), 350); }
 
   // ── 알림 ──
   const b64u = (s) => { const p = '='.repeat((4 - (s.length % 4)) % 4), r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
   async function pushOn() {
+    if (TCH) return toast('선생님 화면에서는 알림을 켜지 않아요');
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return toast('홈 화면에 추가한 앱에서 켤 수 있어요');
       const p = await Notification.requestPermission(); if (p !== 'granted') { toast('알림이 꺼져 있어요. 설정 앱에서 켤 수 있어요'); return refresh(); }
@@ -732,7 +738,10 @@
   // ── 시작 ──
   async function boot() {
     applyFont(); LS.del('jd:weeks');   // 예전 주 단위 저장 칸은 더 쓰지 않아요 (날짜 단위 jd:days 로 바뀜)
-    if (MOCK) AUTH = { who: CFG.owner, code: '' };
+    // 같은 브라우저의 말랑대학이 선생님이면: 코드 없이 열고, 정윤의 글은 읽지도 쓰지도 않아요
+    const u0 = LS.get('mallang-univ:v1', null);
+    if (u0 && (u0.role === 'teacher' || u0.role === 'admin')) { TCH = true; AUTH = { who: CFG.owner, code: '' }; DOC = { v: 2, entries: {}, stk: {}, gone: {}, fly: {}, at: 0 }; PUSH = null; SRV = 'tch'; setTimeout(() => toast('선생님 화면이에요. 여기서 쓴 건 저장되지 않아요'), 900); }
+    if (MOCK && !TCH) AUTH = { who: CFG.owner, code: '' };
     if (!AUTH) { const u = LS.get('mallang-univ:v1', null); if (u && u.who === CFG.owner && (u.role || 'student') === 'student' && u.syncKey) { AUTH = { who: u.who, code: u.syncKey }; LS.set('jd:auth', AUTH); } }   // 같은 브라우저에서 말랑대학을 쓰고 있으면 그대로 열려요
     if (!DOC.fly.since) { let s0 = LS.get('jd:since', ''); if (!s0) { const d = new Date(); s0 = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`; LS.set('jd:since', s0); } DOC.fly.since = s0; }   // 처음 연 날을 한 번만 적어 두고 그대로 써요 (카드에서 눌러 고칠 수 있어요)
     buildPages(); pos = 0; TWO = null; layout(); buildTabs(); sync();
